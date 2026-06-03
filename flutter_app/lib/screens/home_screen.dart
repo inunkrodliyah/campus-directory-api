@@ -83,8 +83,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final categoryMatch =
           selectedCategory == 'Semua'
-              ? true
-              : place.category == selectedCategory;
+          ? true
+          : place.category.toLowerCase().trim() ==
+          selectedCategory.toLowerCase().trim();
 
       final ratingMatch =
           place.rating >= minRating;
@@ -216,16 +217,8 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Text('Semua'),
     ),
     DropdownMenuItem(
-      value: 'Fotocopy',
+      value: 'fotocopy',
       child: Text('Fotocopy'),
-    ),
-    DropdownMenuItem(
-      value: 'Print',
-      child: Text('Print'),
-    ),
-    DropdownMenuItem(
-      value: 'ATK',
-      child: Text('ATK'),
     ),
   ],
   onChanged: (value) {
