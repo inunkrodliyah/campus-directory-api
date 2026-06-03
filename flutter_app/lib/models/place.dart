@@ -9,6 +9,7 @@ class Place {
   final String photoUrl;
   final String openHours;
   final String category;
+  bool isFavorite;
 
   Place({
     required this.id,
@@ -21,6 +22,7 @@ class Place {
     required this.photoUrl,
     required this.openHours,
     required this.category,
+  this.isFavorite = false,
   });
 
   factory Place.fromJson(Map<String, dynamic> json) {

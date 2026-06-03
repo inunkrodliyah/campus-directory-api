@@ -20,6 +20,8 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = true;
   String errorMessage = '';
   final TextEditingController _searchController = TextEditingController();
+  String selectedCategory = 'Semua';
+  double minRating = 0;
 
   @override
   void initState() {
@@ -54,10 +56,12 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final data = await ApiService.getPlaces();
       setState(() {
-        allPlaces = data;
-        filteredPlaces = data;
-        isLoading = false;
-      });
+      allPlaces = data;
+      filteredPlaces = data;
+      isLoading = false;
+    });
+
+    _filterPlaces();
     } catch (e) {
       setState(() {
         errorMessage = 'Gagal memuat data. Cek koneksi internet.';
@@ -66,19 +70,35 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _filterPlaces() {
+  setState(() {
+    filteredPlaces = allPlaces.where((place) {
+
+      final searchMatch =
+          _searchController.text.isEmpty ||
+          place.name.toLowerCase().contains(
+              _searchController.text.toLowerCase()) ||
+          place.address.toLowerCase().contains(
+              _searchController.text.toLowerCase());
+
+      final categoryMatch =
+          selectedCategory == 'Semua'
+              ? true
+              : place.category == selectedCategory;
+
+      final ratingMatch =
+          place.rating >= minRating;
+
+      return searchMatch &&
+          categoryMatch &&
+          ratingMatch;
+    }).toList();
+  });
+}
+
   void _onSearch(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        filteredPlaces = allPlaces;
-      } else {
-        filteredPlaces = allPlaces
-            .where((p) =>
-                p.name.toLowerCase().contains(query.toLowerCase()) ||
-                p.address.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
-    });
-  }
+  _filterPlaces();
+}
 
   String _getDistance(Place place) {
     if (userLocation == null) return '';
@@ -138,7 +158,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                       child: TextField(
                         controller: _searchController,
-                        onChanged: _onSearch,
+                        onChanged: (value) {
+                          _onSearch(value);
+                          setState(() {});
+                        },
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           hintText: 'Cari tempat fotocopy...',
@@ -151,15 +174,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                   icon: const Icon(Icons.clear,
                                       color: Colors.white70),
                                   onPressed: () {
-                                    _searchController.clear();
-                                    _onSearch('');
-                                  },
+                                  _searchController.clear();
+
+                                  setState(() {
+                                    filteredPlaces = allPlaces;
+                                  });
+
+                                  _filterPlaces();
+                                },
                                 )
                               : null,
                           filled: true,
                           fillColor: Colors.blue[700],
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(18),
                             borderSide: BorderSide.none,
                           ),
                           contentPadding:
@@ -167,6 +195,82 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                     ),
+
+                    Container(
+  color: Colors.white,
+  padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+  child: Column(
+    children: [
+
+      DropdownButtonFormField<String>(
+  initialValue: selectedCategory,
+  decoration: InputDecoration(
+    labelText: "Kategori",
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(18),
+    ),
+  ),
+  items: const [
+    DropdownMenuItem(
+      value: 'Semua',
+      child: Text('Semua'),
+    ),
+    DropdownMenuItem(
+      value: 'Fotocopy',
+      child: Text('Fotocopy'),
+    ),
+    DropdownMenuItem(
+      value: 'Print',
+      child: Text('Print'),
+    ),
+    DropdownMenuItem(
+      value: 'ATK',
+      child: Text('ATK'),
+    ),
+  ],
+  onChanged: (value) {
+    if (value == null) return;
+
+    setState(() {
+      selectedCategory = value;
+    });
+
+    _filterPlaces();
+  },
+),
+
+const SizedBox(height: 12),
+
+      Row(
+        children: [
+          const Icon(
+            Icons.star,
+            color: Colors.amber,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'Rating minimal: ${minRating.toStringAsFixed(1)}',
+          ),
+        ],
+      ),
+
+      Slider(
+        value: minRating,
+        min: 0,
+        max: 5,
+        divisions: 10,
+        label: minRating.toStringAsFixed(1),
+        onChanged: (value) {
+          setState(() {
+            minRating = value;
+          });
+
+          _filterPlaces();
+        },
+      ),
+    ],
+  ),
+),
                     // Jumlah hasil
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -234,7 +338,7 @@ class _PlaceCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
+      elevation: 4,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap, // ← INI yang bikin bisa diklik ke detail
@@ -244,16 +348,16 @@ class _PlaceCard extends StatelessWidget {
             // Foto
             CachedNetworkImage(
               imageUrl: place.photoUrl,
-              height: 150,
+              height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
               placeholder: (context, url) => Container(
-                height: 150,
+                height: 180,
                 color: Colors.grey[200],
                 child: const Center(child: CircularProgressIndicator()),
               ),
               errorWidget: (context, url, error) => Container(
-                height: 150,
+                height: 180,
                 color: Colors.grey[200],
                 child: const Icon(Icons.image_not_supported,
                     size: 50, color: Colors.grey),
@@ -267,7 +371,7 @@ class _PlaceCard extends StatelessWidget {
                   Text(
                     place.name,
                     style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15),
+                        fontWeight: FontWeight.bold, fontSize: 17),
                   ),
                   const SizedBox(height: 4),
                   Row(
