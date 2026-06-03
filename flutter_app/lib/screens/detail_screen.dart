@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/place.dart';
+import 'route_screen.dart'; // Tambahkan ini
 
 class DetailScreen extends StatelessWidget {
   final Place place;
@@ -30,14 +31,24 @@ class DetailScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _openRoute() async {
-    final url =
-        'https://www.google.com/maps/dir/?api=1&destination=${place.latitude},${place.longitude}&travelmode=driving';
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+void _openRoute(BuildContext context) {
+  if (userLocation == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Tunggu sebentar, lokasi Anda belum ditemukan.')),
+    );
+    return;
   }
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => RouteScreen(
+        place: place,
+        userLocation: userLocation!,
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -99,10 +110,10 @@ class DetailScreen extends StatelessWidget {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton.icon(
-                      onPressed: _openRoute,
+                      onPressed: () => _openRoute(context),
                       icon: const Icon(Icons.directions, color: Colors.white),
                       label: const Text(
-                        'Buka Rute di Google Maps',
+                        'lihat rute perjalanan',
                         style: TextStyle(
                             fontSize: 16, color: Colors.white),
                       ),
