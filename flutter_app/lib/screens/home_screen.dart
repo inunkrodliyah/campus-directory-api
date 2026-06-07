@@ -20,8 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = true;
   String errorMessage = '';
   final TextEditingController _searchController = TextEditingController();
-  String selectedCategory = 'Semua';
-  double minRating = 0;
+  String selectedSort = 'default';
 
   @override
   void initState() {
@@ -47,6 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         userLocation = LatLng(position.latitude, position.longitude);
       });
+      _filterPlaces();
     } catch (e) {
       debugPrint('GPS error: $e');
     }
@@ -56,12 +56,11 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final data = await ApiService.getPlaces();
       setState(() {
-      allPlaces = data;
-      filteredPlaces = data;
-      isLoading = false;
-    });
-
-    _filterPlaces();
+        allPlaces = data;
+        filteredPlaces = data;
+        isLoading = false;
+      });
+      _filterPlaces();
     } catch (e) {
       setState(() {
         errorMessage = 'Gagal memuat data. Cek koneksi internet.';
@@ -71,35 +70,41 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _filterPlaces() {
-  setState(() {
-    filteredPlaces = allPlaces.where((place) {
+    setState(() {
+      // Filter search
+      filteredPlaces = allPlaces.where((place) {
+        final searchMatch =
+            _searchController.text.isEmpty ||
+            place.name.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+            place.address.toLowerCase().contains(_searchController.text.toLowerCase());
 
-      final searchMatch =
-          _searchController.text.isEmpty ||
-          place.name.toLowerCase().contains(
-              _searchController.text.toLowerCase()) ||
-          place.address.toLowerCase().contains(
-              _searchController.text.toLowerCase());
+        // Filter buka 24 jam
+        final bukaMatch =
+            selectedSort == 'buka24'
+            ? place.openHours.toLowerCase().contains('24')
+            : true;
 
-      final categoryMatch =
-          selectedCategory == 'Semua'
-          ? true
-          : place.category.toLowerCase().trim() ==
-          selectedCategory.toLowerCase().trim();
+        return searchMatch && bukaMatch;
+      }).toList();
 
-      final ratingMatch =
-          place.rating >= minRating;
-
-      return searchMatch &&
-          categoryMatch &&
-          ratingMatch;
-    }).toList();
-  });
-}
-
-  void _onSearch(String query) {
-  _filterPlaces();
-}
+      // Sort
+      if (selectedSort == 'terdekat' && userLocation != null) {
+        filteredPlaces.sort((a, b) {
+          final distA = Geolocator.distanceBetween(
+            userLocation!.latitude, userLocation!.longitude,
+            a.latitude, a.longitude,
+          );
+          final distB = Geolocator.distanceBetween(
+            userLocation!.latitude, userLocation!.longitude,
+            b.latitude, b.longitude,
+          );
+          return distA.compareTo(distB);
+        });
+      } else if (selectedSort == 'rating') {
+        filteredPlaces.sort((a, b) => b.rating.compareTo(a.rating));
+      }
+    });
+  }
 
   String _getDistance(Place place) {
     if (userLocation == null) return '';
@@ -138,8 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       const Icon(Icons.wifi_off, size: 60, color: Colors.grey),
                       const SizedBox(height: 16),
-                      Text(errorMessage,
-                          style: const TextStyle(color: Colors.grey)),
+                      Text(errorMessage, style: const TextStyle(color: Colors.grey)),
                       const SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () {
@@ -160,29 +164,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: TextField(
                         controller: _searchController,
                         onChanged: (value) {
-                          _onSearch(value);
                           setState(() {});
+                          _filterPlaces();
                         },
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           hintText: 'Cari tempat fotocopy...',
-                          hintStyle:
-                              const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(Icons.search,
-                              color: Colors.white70),
+                          hintStyle: const TextStyle(color: Colors.white70),
+                          prefixIcon: const Icon(Icons.search, color: Colors.white70),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.clear,
-                                      color: Colors.white70),
+                                  icon: const Icon(Icons.clear, color: Colors.white70),
                                   onPressed: () {
-                                  _searchController.clear();
-
-                                  setState(() {
-                                    filteredPlaces = allPlaces;
-                                  });
-
-                                  _filterPlaces();
-                                },
+                                    _searchController.clear();
+                                    _filterPlaces();
+                                  },
                                 )
                               : null,
                           filled: true,
@@ -191,79 +187,40 @@ class _HomeScreenState extends State<HomeScreen> {
                             borderRadius: BorderRadius.circular(18),
                             borderSide: BorderSide.none,
                           ),
-                          contentPadding:
-                              const EdgeInsets.symmetric(vertical: 0),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0),
                         ),
                       ),
                     ),
 
+                    // Filter dropdown
                     Container(
-  color: Colors.white,
-  padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-  child: Column(
-    children: [
+                      color: Colors.white,
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+                      child: DropdownButtonFormField<String>(
+                        value: selectedSort,
+                        decoration: InputDecoration(
+                          labelText: "Urutkan",
+                          prefixIcon: const Icon(Icons.sort),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'default', child: Text('Default')),
+                          DropdownMenuItem(value: 'terdekat', child: Text('Terdekat')),
+                          DropdownMenuItem(value: 'rating', child: Text('Rating Tertinggi ⭐')),
+                          DropdownMenuItem(value: 'buka24', child: Text('Buka 24 Jam')),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => selectedSort = value);
+                          _filterPlaces();
+                        },
+                      ),
+                    ),
 
-      DropdownButtonFormField<String>(
-  initialValue: selectedCategory,
-  decoration: InputDecoration(
-    labelText: "Kategori",
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(18),
-    ),
-  ),
-  items: const [
-    DropdownMenuItem(
-      value: 'Semua',
-      child: Text('Semua'),
-    ),
-    DropdownMenuItem(
-      value: 'fotocopy',
-      child: Text('Fotocopy'),
-    ),
-  ],
-  onChanged: (value) {
-    if (value == null) return;
-
-    setState(() {
-      selectedCategory = value;
-    });
-
-    _filterPlaces();
-  },
-),
-
-const SizedBox(height: 12),
-
-      Row(
-        children: [
-          const Icon(
-            Icons.star,
-            color: Colors.amber,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Rating minimal: ${minRating.toStringAsFixed(1)}',
-          ),
-        ],
-      ),
-
-      Slider(
-        value: minRating,
-        min: 0,
-        max: 5,
-        divisions: 10,
-        label: minRating.toStringAsFixed(1),
-        onChanged: (value) {
-          setState(() {
-            minRating = value;
-          });
-
-          _filterPlaces();
-        },
-      ),
-    ],
-  ),
-),
                     // Jumlah hasil
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
@@ -271,18 +228,16 @@ const SizedBox(height: 12),
                         children: [
                           Text(
                             '${filteredPlaces.length} tempat ditemukan',
-                            style: TextStyle(
-                                color: Colors.grey[600], fontSize: 13),
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
                           ),
                         ],
                       ),
                     ),
+
                     // List
                     Expanded(
                       child: filteredPlaces.isEmpty
-                          ? const Center(
-                              child: Text('Tidak ada tempat yang ditemukan'),
-                            )
+                          ? const Center(child: Text('Tidak ada tempat yang ditemukan'))
                           : RefreshIndicator(
                               onRefresh: fetchPlaces,
                               child: ListView.builder(
@@ -334,11 +289,10 @@ class _PlaceCard extends StatelessWidget {
       elevation: 4,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap, // ← INI yang bikin bisa diklik ke detail
+        onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Foto
             CachedNetworkImage(
               imageUrl: place.photoUrl,
               height: 180,
@@ -369,14 +323,12 @@ class _PlaceCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.location_on,
-                          size: 14, color: Colors.grey),
+                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           place.address,
-                          style: const TextStyle(
-                              fontSize: 12, color: Colors.grey),
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -394,13 +346,11 @@ class _PlaceCard extends StatelessWidget {
                             fontWeight: FontWeight.bold, fontSize: 13),
                       ),
                       const SizedBox(width: 16),
-                      const Icon(Icons.access_time,
-                          size: 16, color: Colors.grey),
+                      const Icon(Icons.access_time, size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
                       Text(
                         place.openHours,
-                        style: const TextStyle(
-                            fontSize: 13, color: Colors.grey),
+                        style: const TextStyle(fontSize: 13, color: Colors.grey),
                       ),
                       if (distance.isNotEmpty) ...[
                         const Spacer(),
@@ -414,9 +364,10 @@ class _PlaceCard extends StatelessWidget {
                           child: Text(
                             distance,
                             style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue[800],
-                                fontWeight: FontWeight.bold),
+                              fontSize: 12,
+                              color: Colors.blue[800],
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
                       ],
