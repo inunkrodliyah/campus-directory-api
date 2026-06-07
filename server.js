@@ -23,12 +23,13 @@ app.get("/", (req, res) => {
   });
 });
 
+// GET semua tempat + filter kategori
 app.get("/places", async (req, res) => {
   try {
+    const { category } = req.query;
     const snapshot = await db.collection("places").get();
 
-    const places = [];
-
+    let places = [];
     snapshot.forEach((doc) => {
       places.push({
         id: doc.id,
@@ -36,7 +37,36 @@ app.get("/places", async (req, res) => {
       });
     });
 
+    // Filter by category kalau ada query ?category=
+    if (category) {
+      places = places.filter(
+        (p) => p.category?.toLowerCase() === category.toLowerCase()
+      );
+    }
+
     res.json(places);
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+// GET detail satu tempat by ID
+app.get("/places/:id", async (req, res) => {
+  try {
+    const doc = await db.collection("places").doc(req.params.id).get();
+
+    if (!doc.exists) {
+      return res.status(404).json({
+        error: "Place not found",
+      });
+    }
+
+    res.json({
+      id: doc.id,
+      ...doc.data(),
+    });
   } catch (error) {
     res.status(500).json({
       error: error.message,
