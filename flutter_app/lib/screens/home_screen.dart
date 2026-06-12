@@ -19,19 +19,15 @@ class _HomeScreenState extends State<HomeScreen> {
   LatLng? userLocation;
   bool isLoading = true;
   String errorMessage = '';
-
   final TextEditingController _searchController = TextEditingController();
-
-  String selectedSort = 'default';
   String selectedCategory = 'Semua';
 
-  // ✅ Tambahan kategori
-  final List<String> categories = [
-    'Semua',
-    'Fotocopy & Printing',
-    '24 Jam',
-    'Warnet & Rental Komputer',
-    'Percetakan & Digital Printing',
+  final List<Map<String, dynamic>> categories = [
+    {'value': 'Semua', 'icon': Icons.apps},
+    {'value': 'Fotocopy & Printing', 'icon': Icons.print},
+    {'value': '24 Jam', 'icon': Icons.access_time},
+    {'value': 'Warnet & Rental Komputer', 'icon': Icons.computer},
+    {'value': 'Percetakan & Digital Printing', 'icon': Icons.local_printshop},
   ];
 
   @override
@@ -50,19 +46,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _getUserLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
-
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-
       if (permission == LocationPermission.deniedForever) return;
-
       final position = await Geolocator.getCurrentPosition();
-
       setState(() {
         userLocation = LatLng(position.latitude, position.longitude);
       });
-
       _filterPlaces();
     } catch (e) {
       debugPrint('GPS error: $e');
@@ -72,13 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> fetchPlaces() async {
     try {
       final data = await ApiService.getPlaces();
-
       setState(() {
         allPlaces = data;
         filteredPlaces = data;
         isLoading = false;
       });
-
       _filterPlaces();
     } catch (e) {
       setState(() {
@@ -88,68 +77,32 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ✅ UPDATED FILTER (MULTI CATEGORY)
   void _filterPlaces() {
     setState(() {
       filteredPlaces = allPlaces.where((place) {
         final searchMatch =
             _searchController.text.isEmpty ||
-                place.name.toLowerCase().contains(
-                  _searchController.text.toLowerCase(),
-                ) ||
-                place.address.toLowerCase().contains(
-                  _searchController.text.toLowerCase(),
-                );
+            place.name.toLowerCase().contains(_searchController.text.toLowerCase()) ||
+            place.address.toLowerCase().contains(_searchController.text.toLowerCase());
 
         final categoryMatch =
-        selectedCategory == 'Semua'
+            selectedCategory == 'Semua'
             ? true
             : place.category.contains(selectedCategory);
 
-        final bukaMatch =
-        selectedSort == 'buka24'
-            ? place.openHours.toLowerCase().contains('24')
-            : true;
-
-        return searchMatch && categoryMatch && bukaMatch;
+        return searchMatch && categoryMatch;
       }).toList();
-
-      if (selectedSort == 'terdekat' && userLocation != null) {
-        filteredPlaces.sort((a, b) {
-          final distA = Geolocator.distanceBetween(
-            userLocation!.latitude,
-            userLocation!.longitude,
-            a.latitude,
-            a.longitude,
-          );
-
-          final distB = Geolocator.distanceBetween(
-            userLocation!.latitude,
-            userLocation!.longitude,
-            b.latitude,
-            b.longitude,
-          );
-
-          return distA.compareTo(distB);
-        });
-      } else if (selectedSort == 'rating') {
-        filteredPlaces.sort(
-              (a, b) => b.rating.compareTo(a.rating),
-        );
-      }
     });
   }
 
   String _getDistance(Place place) {
     if (userLocation == null) return '';
-
     final distanceInMeters = Geolocator.distanceBetween(
       userLocation!.latitude,
       userLocation!.longitude,
       place.latitude,
       place.longitude,
     );
-
     if (distanceInMeters < 1000) {
       return '${distanceInMeters.toStringAsFixed(0)} m';
     } else {
@@ -173,198 +126,164 @@ class _HomeScreenState extends State<HomeScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.wifi_off,
-                size: 60, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(errorMessage,
-                style:
-                const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                setState(() => isLoading = true);
-                fetchPlaces();
-              },
-              child: const Text('Coba Lagi'),
-            ),
-          ],
-        ),
-      )
-          : Column(
-        children: [
-          // SEARCH
-          Container(
-            color: Colors.blue[800],
-            padding:
-            const EdgeInsets.fromLTRB(12, 0, 12, 12),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                _filterPlaces();
-              },
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Cari tempat fotocopy...',
-                hintStyle:
-                const TextStyle(color: Colors.white70),
-                prefixIcon: const Icon(Icons.search,
-                    color: Colors.white70),
-                suffixIcon:
-                _searchController.text.isNotEmpty
-                    ? IconButton(
-                  icon: const Icon(Icons.clear,
-                      color: Colors.white70),
-                  onPressed: () {
-                    _searchController.clear();
-                    _filterPlaces();
-                  },
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.wifi_off, size: 60, color: Colors.grey),
+                      const SizedBox(height: 16),
+                      Text(errorMessage, style: const TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() => isLoading = true);
+                          fetchPlaces();
+                        },
+                        child: const Text('Coba Lagi'),
+                      ),
+                    ],
+                  ),
                 )
-                    : null,
-                filled: true,
-                fillColor: Colors.blue[700],
-                border: OutlineInputBorder(
-                  borderRadius:
-                  BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-          ),
-
-          // ✅ FILTER BAR (2 DROPDOWN)
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                DropdownButtonFormField<String>(
-                  value: selectedCategory,
-                  decoration: InputDecoration(
-                    labelText: "Kategori",
-                    prefixIcon:
-                    const Icon(Icons.category),
-                    border: OutlineInputBorder(
-                      borderRadius:
-                      BorderRadius.circular(12),
-                    ),
-                  ),
-                  items: categories.map((category) {
-                    return DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value == null) return;
-
-                    setState(() {
-                      selectedCategory = value;
-                    });
-
-                    _filterPlaces();
-                  },
-                ),
-
-                const SizedBox(height: 12),
-
-                DropdownButtonFormField<String>(
-                  value: selectedSort,
-                  decoration: InputDecoration(
-                    labelText: "Urutkan",
-                    prefixIcon: const Icon(Icons.sort),
-                    border: OutlineInputBorder(
-                      borderRadius:
-                      BorderRadius.circular(12),
-                    ),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'default',
-                        child: Text('Semua')),
-                    DropdownMenuItem(
-                        value: 'terdekat',
-                        child: Text('Terdekat')),
-                    DropdownMenuItem(
-                        value: 'rating',
-                        child: Text(
-                            'Rating Tertinggi ⭐')),
-                    DropdownMenuItem(
-                        value: 'buka24',
-                        child: Text('Buka 24 Jam')),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-
-                    setState(() {
-                      selectedSort = value;
-                    });
-
-                    _filterPlaces();
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          // RESULT COUNT
-          Padding(
-            padding:
-            const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Row(
-              children: [
-                Text(
-                  '${filteredPlaces.length} tempat ditemukan',
-                  style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 13),
-                ),
-              ],
-            ),
-          ),
-
-          // LIST
-          Expanded(
-            child: filteredPlaces.isEmpty
-                ? const Center(
-                child: Text(
-                    'Tidak ada tempat yang ditemukan'))
-                : RefreshIndicator(
-              onRefresh: fetchPlaces,
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(
-                    12, 4, 12, 12),
-                itemCount: filteredPlaces.length,
-                itemBuilder: (context, index) {
-                  final place =
-                  filteredPlaces[index];
-
-                  return _PlaceCard(
-                    place: place,
-                    distance: _getDistance(place),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              DetailScreen(
-                                place: place,
-                                userLocation:
-                                userLocation,
+              : Column(
+                  children: [
+                    // Search + Filter dalam satu container
+                    Container(
+                      color: Colors.blue[800],
+                      padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                      child: Column(
+                        children: [
+                          // Search bar
+                          TextField(
+                            controller: _searchController,
+                            onChanged: (value) {
+                              setState(() {});
+                              _filterPlaces();
+                            },
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: 'Cari tempat fotocopy...',
+                              hintStyle: const TextStyle(color: Colors.white70),
+                              prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                              suffixIcon: _searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear, color: Colors.white70),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        _filterPlaces();
+                                      },
+                                    )
+                                  : null,
+                              filled: true,
+                              fillColor: Colors.blue[700],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                                borderSide: BorderSide.none,
                               ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
+                              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                            ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          // Dropdown Kategori
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: selectedCategory,
+                                isExpanded: true,
+                                icon: const Icon(Icons.keyboard_arrow_down,
+                                    color: Colors.blue),
+                                items: categories.map((cat) {
+                                  return DropdownMenuItem<String>(
+                                    value: cat['value'] as String,
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          cat['icon'] as IconData,
+                                          size: 18,
+                                          color: selectedCategory == cat['value']
+                                              ? Colors.blue[800]
+                                              : Colors.grey,
+                                        ),
+                                        const SizedBox(width: 10),
+                                        Text(
+                                          cat['value'] as String,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: selectedCategory == cat['value']
+                                                ? Colors.blue[800]
+                                                : Colors.black87,
+                                            fontWeight: selectedCategory == cat['value']
+                                                ? FontWeight.bold
+                                                : FontWeight.normal,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value == null) return;
+                                  setState(() => selectedCategory = value);
+                                  _filterPlaces();
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Jumlah hasil
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                      child: Row(
+                        children: [
+                          Text(
+                            '${filteredPlaces.length} tempat ditemukan',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // List
+                    Expanded(
+                      child: filteredPlaces.isEmpty
+                          ? const Center(child: Text('Tidak ada tempat yang ditemukan'))
+                          : RefreshIndicator(
+                              onRefresh: fetchPlaces,
+                              child: ListView.builder(
+                                padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                                itemCount: filteredPlaces.length,
+                                itemBuilder: (context, index) {
+                                  final place = filteredPlaces[index];
+                                  return _PlaceCard(
+                                    place: place,
+                                    distance: _getDistance(place),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => DetailScreen(
+                                            place: place,
+                                            userLocation: userLocation,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                            ),
+                    ),
+                  ],
+                ),
     );
   }
 }
@@ -384,88 +303,119 @@ class _PlaceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 4,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Column(
-          crossAxisAlignment:
-          CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CachedNetworkImage(
               imageUrl: place.photoUrl,
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
+              placeholder: (context, url) => Container(
+                height: 180,
+                color: Colors.grey[200],
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+              errorWidget: (context, url, error) => Container(
+                height: 180,
+                color: Colors.grey[200],
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.store, size: 50, color: Colors.grey[400]),
+                    const SizedBox(height: 8),
+                    Text('Foto tidak tersedia',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12)),
+                  ],
+                ),
+              ),
             ),
             Padding(
-              padding:
-              const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     place.name,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 17),
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                   ),
-
-                  const SizedBox(height: 8),
-
-                  // ✅ KATEGORI CHIP
+                  const SizedBox(height: 6),
+                  // Kategori chips
                   Wrap(
                     spacing: 6,
-                    runSpacing: 6,
-                    children:
-                    place.category.map((category) {
+                    runSpacing: 4,
+                    children: place.category.map((cat) {
                       return Container(
-                        padding:
-                        const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color:
-                          Colors.blue.shade50,
-                          borderRadius:
-                          BorderRadius.circular(
-                              20),
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          category,
+                          cat,
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.blue[800],
-                            fontWeight:
-                            FontWeight.w600,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       );
                     }).toList(),
                   ),
-
                   const SizedBox(height: 8),
-
-                  Text(place.address,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey)),
-
-                  const SizedBox(height: 8),
-
                   Row(
                     children: [
-                      const Icon(Icons.star,
-                          size: 16,
-                          color: Colors.amber),
+                      const Icon(Icons.location_on, size: 14, color: Colors.grey),
                       const SizedBox(width: 4),
-                      Text(place.rating.toString()),
-                      const Spacer(),
-                      Text(distance),
+                      Expanded(
+                        child: Text(
+                          place.address,
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.star, size: 16, color: Colors.amber),
+                      const SizedBox(width: 4),
+                      Text(
+                        place.rating.toString(),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                      const SizedBox(width: 4),
+                      Text(
+                        place.openHours,
+                        style: const TextStyle(fontSize: 13, color: Colors.grey),
+                      ),
+                      if (distance.isNotEmpty) ...[
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            distance,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue[800],
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],

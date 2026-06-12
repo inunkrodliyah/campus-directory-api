@@ -17,14 +17,12 @@ class DetailScreen extends StatelessWidget {
 
   String _getDistance() {
     if (userLocation == null) return 'GPS tidak aktif';
-
     final distanceInMeters = Geolocator.distanceBetween(
       userLocation!.latitude,
       userLocation!.longitude,
       place.latitude,
       place.longitude,
     );
-
     if (distanceInMeters < 1000) {
       return '${distanceInMeters.toStringAsFixed(0)} m';
     } else {
@@ -35,13 +33,10 @@ class DetailScreen extends StatelessWidget {
   void _openRoute(BuildContext context) {
     if (userLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Tunggu sebentar, lokasi Anda belum ditemukan.'),
-        ),
+        const SnackBar(content: Text('Tunggu sebentar, lokasi Anda belum ditemukan.')),
       );
       return;
     }
-
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -59,24 +54,38 @@ class DetailScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF5F5F5),
       body: CustomScrollView(
         slivers: [
-          // HEADER FOTO
+          // Header foto
           SliverAppBar(
-            expandedHeight: 220,
+            expandedHeight: 250,
             pinned: true,
             backgroundColor: Colors.blue[800],
             foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
-              background: CachedNetworkImage(
-                imageUrl: place.photoUrl,
-                fit: BoxFit.cover,
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[300],
-                  child: const Icon(
-                    Icons.image_not_supported,
-                    size: 60,
-                    color: Colors.grey,
+              background: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CachedNetworkImage(
+                    imageUrl: place.photoUrl,
+                    fit: BoxFit.cover,
+                    errorWidget: (context, url, error) => Container(
+                      color: Colors.blue[900],
+                      child: const Icon(Icons.store, size: 80, color: Colors.white30),
+                    ),
                   ),
-                ),
+                  // Gradient overlay
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.5),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -87,87 +96,111 @@ class DetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // NAMA TEMPAT
+                  // Nama + kategori
                   Text(
                     place.name,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-
-                  // ✅ KATEGORI (CHIP)
+                  const SizedBox(height: 8),
                   Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: place.category.map((category) {
-                      return Chip(
-                        label: Text(category),
-                        backgroundColor: Colors.blue.shade50,
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: place.category.map((cat) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[800],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          cat,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       );
                     }).toList(),
                   ),
 
                   const SizedBox(height: 16),
 
-                  // INFO
-                  _infoRow(
-                    Icons.star,
-                    Colors.amber,
-                    'Rating',
-                    '${place.rating} / 5.0',
+                  // Info cards
+                  _infoCard(
+                    icon: Icons.star,
+                    color: Colors.amber,
+                    label: 'Rating',
+                    value: '${place.rating} / 5.0',
+                    trailing: Row(
+                      children: List.generate(5, (i) {
+                        return Icon(
+                          i < place.rating.floor()
+                              ? Icons.star
+                              : Icons.star_border,
+                          color: Colors.amber,
+                          size: 16,
+                        );
+                      }),
+                    ),
                   ),
-                  _infoRow(
-                    Icons.location_on,
-                    Colors.red,
-                    'Alamat',
-                    place.address,
+                  _infoCard(
+                    icon: Icons.location_on,
+                    color: Colors.red,
+                    label: 'Alamat',
+                    value: place.address,
                   ),
-                  _infoRow(
-                    Icons.access_time,
-                    Colors.blue,
-                    'Jam Buka',
-                    place.openHours,
+                  _infoCard(
+                    icon: Icons.access_time,
+                    color: Colors.blue,
+                    label: 'Jam Buka',
+                    value: place.openHours,
                   ),
-                  _infoRow(
-                    Icons.phone,
-                    Colors.green,
-                    'Telepon',
-                    place.phone.isEmpty ? '-' : place.phone,
+                  _infoCard(
+                    icon: Icons.phone,
+                    color: Colors.green,
+                    label: 'Telepon',
+                    value: place.phone.isEmpty ? '-' : place.phone,
                   ),
-                  _infoRow(
-                    Icons.directions_walk,
-                    Colors.orange,
-                    'Jarak',
-                    _getDistance(),
+                  _infoCard(
+                    icon: Icons.directions_walk,
+                    color: Colors.orange,
+                    label: 'Jarak dari lokasi Anda',
+                    value: _getDistance(),
                   ),
 
                   const SizedBox(height: 24),
 
-                  // TOMBOL RUTE
+                  // Tombol buka rute
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 54,
                     child: ElevatedButton.icon(
                       onPressed: () => _openRoute(context),
-                      icon: const Icon(Icons.directions, color: Colors.white),
+                      icon: const Icon(Icons.directions, color: Colors.white, size: 22),
                       label: const Text(
                         'Lihat Rute Perjalanan',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue[800],
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(14),
                         ),
+                        elevation: 3,
                       ),
                     ),
                   ),
+
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
@@ -177,23 +210,38 @@ class DetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _infoRow(
-    IconData icon,
-    Color color,
-    String label,
-    String value,
-  ) {
+  Widget _infoCard({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required String value,
+    Widget? trailing,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 20),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: color, size: 20),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -201,21 +249,25 @@ class DetailScreen extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   value,
                   style: const TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
                   ),
                 ),
               ],
             ),
           ),
+          if (trailing != null) trailing,
         ],
       ),
     );
