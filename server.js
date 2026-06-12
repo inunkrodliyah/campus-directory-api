@@ -37,11 +37,15 @@ app.get("/places", async (req, res) => {
       });
     });
 
-    // Filter by category kalau ada query ?category=
     if (category) {
-      places = places.filter(
-        (p) => p.category?.toLowerCase() === category.toLowerCase()
-      );
+      places = places.filter((p) => {
+        if (Array.isArray(p.category)) {
+          return p.category.some(
+            (c) => String(c).toLowerCase() === category.toLowerCase()
+          );
+        }
+        return String(p.category).toLowerCase() === category.toLowerCase();
+      });
     }
 
     res.json(places);
@@ -74,20 +78,20 @@ app.get("/places/:id", async (req, res) => {
   }
 });
 
+// POST tambah tempat baru
 app.post("/places", async (req, res) => {
   try {
     const { name, address, latitude, longitude, category } = req.body;
 
-    // Validasi input
     if (!name || !address || !latitude || !longitude || !category) {
       return res.status(400).json({
-        error: "Field name, address, latitude, longitude, category wajib diisi"
+        error: "Field name, address, latitude, longitude, category wajib diisi",
       });
     }
 
     if (isNaN(latitude) || isNaN(longitude)) {
       return res.status(400).json({
-        error: "Latitude dan longitude harus berupa angka"
+        error: "Latitude dan longitude harus berupa angka",
       });
     }
 
@@ -103,8 +107,6 @@ app.post("/places", async (req, res) => {
   }
 });
 
-
-
 // GET semua kategori
 app.get("/categories", async (req, res) => {
   try {
@@ -113,14 +115,16 @@ app.get("/categories", async (req, res) => {
 
     snapshot.forEach((doc) => {
       const data = doc.data();
-      if (data.category) {
-        categories.add(data.category);
+      if (Array.isArray(data.category)) {
+        data.category.forEach((cat) => categories.add(String(cat)));
+      } else if (data.category) {
+        categories.add(String(data.category));
       }
     });
 
     const result = Array.from(categories).map((cat) => ({
       name: cat,
-      label: cat.charAt(0).toUpperCase() + cat.slice(1),
+      label: cat,
     }));
 
     res.json(result);
