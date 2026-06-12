@@ -17,8 +17,8 @@ class _MapScreenState extends State<MapScreen> {
   List<Place> places = [];
   LatLng? userLocation;
   bool isLoading = true;
+  final MapController _mapController = MapController();
 
-  // Koordinat tengah kampus Unair sebagai default
   final LatLng defaultCenter = const LatLng(-7.2704, 112.7609);
 
   @override
@@ -72,6 +72,7 @@ class _MapScreenState extends State<MapScreen> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : FlutterMap(
+              mapController: _mapController,
               options: MapOptions(
                 initialCenter: userLocation ?? defaultCenter,
                 initialZoom: 15,
@@ -83,29 +84,45 @@ class _MapScreenState extends State<MapScreen> {
                       'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.campus_directory',
                 ),
+
                 // Marker lokasi user
                 if (userLocation != null)
                   MarkerLayer(
                     markers: [
                       Marker(
                         point: userLocation!,
-                        width: 40,
-                        height: 40,
-                        child: const Icon(
-                          Icons.my_location,
-                          color: Colors.blue,
-                          size: 36,
+                        width: 60,
+                        height: 60,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue[800],
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 3),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 6,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.person_pin,
+                            color: Colors.white,
+                            size: 30,
+                          ),
                         ),
                       ),
                     ],
                   ),
+
                 // Marker tempat fotocopy
                 MarkerLayer(
                   markers: places.map((place) {
                     return Marker(
                       point: LatLng(place.latitude, place.longitude),
-                      width: 40,
-                      height: 40,
+                      width: 80,
+                      height: 70,
                       child: GestureDetector(
                         onTap: () {
                           Navigator.push(
@@ -118,10 +135,58 @@ class _MapScreenState extends State<MapScreen> {
                             ),
                           );
                         },
-                        child: const Icon(
-                          Icons.location_pin,
-                          color: Colors.red,
-                          size: 36,
+                        child: Column(
+                          children: [
+                            // Label nama (muncul di atas icon)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 3,
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                place.name.length > 10
+                                    ? '${place.name.substring(0, 10)}...'
+                                    : place.name,
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            // Icon fotocopy
+                            Container(
+                              width: 32,
+                              height: 32,
+                              decoration: BoxDecoration(
+                                color: Colors.orange[700],
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                    color: Colors.white, width: 2),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 4,
+                                    offset: Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Icon(
+                                Icons.print,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     );
@@ -129,10 +194,16 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ],
             ),
+
       // Tombol ke lokasi user
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.blue[800],
-        onPressed: _getUserLocation,
+        onPressed: () async {
+          await _getUserLocation();
+          if (userLocation != null) {
+            _mapController.move(userLocation!, 15);
+          }
+        },
         child: const Icon(Icons.my_location, color: Colors.white),
       ),
     );

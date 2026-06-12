@@ -76,12 +76,54 @@ app.get("/places/:id", async (req, res) => {
 
 app.post("/places", async (req, res) => {
   try {
-    const docRef = await db.collection("places").add(req.body);
+    const { name, address, latitude, longitude, category } = req.body;
 
+    // Validasi input
+    if (!name || !address || !latitude || !longitude || !category) {
+      return res.status(400).json({
+        error: "Field name, address, latitude, longitude, category wajib diisi"
+      });
+    }
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({
+        error: "Latitude dan longitude harus berupa angka"
+      });
+    }
+
+    const docRef = await db.collection("places").add(req.body);
     res.status(201).json({
       id: docRef.id,
       message: "Place added",
     });
+  } catch (error) {
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+
+
+// GET semua kategori
+app.get("/categories", async (req, res) => {
+  try {
+    const snapshot = await db.collection("places").get();
+    const categories = new Set();
+
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      if (data.category) {
+        categories.add(data.category);
+      }
+    });
+
+    const result = Array.from(categories).map((cat) => ({
+      name: cat,
+      label: cat.charAt(0).toUpperCase() + cat.slice(1),
+    }));
+
+    res.json(result);
   } catch (error) {
     res.status(500).json({
       error: error.message,

@@ -208,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               horizontal: 12, vertical: 8),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'default', child: Text('Default')),
+                          DropdownMenuItem(value: 'default', child: Text('Semua')),
                           DropdownMenuItem(value: 'terdekat', child: Text('Terdekat')),
                           DropdownMenuItem(value: 'rating', child: Text('Rating Tertinggi ⭐')),
                           DropdownMenuItem(value: 'buka24', child: Text('Buka 24 Jam')),
