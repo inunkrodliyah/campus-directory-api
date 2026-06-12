@@ -8,7 +8,10 @@ class Place {
   final String phone;
   final String photoUrl;
   final String openHours;
-  final String category;
+
+  // Multi kategori
+  final List<String> category;
+
   bool isFavorite;
 
   Place({
@@ -22,21 +25,37 @@ class Place {
     required this.photoUrl,
     required this.openHours,
     required this.category,
-  this.isFavorite = false,
+    this.isFavorite = false,
   });
 
-  factory Place.fromJson(Map<String, dynamic> json) {
-    return Place(
-      id: json['id'] ?? '',
-      name: json['name'] ?? '',
-      address: json['address'] ?? '',
-      latitude: (json['latitude'] ?? 0).toDouble(),
-      longitude: (json['longitude'] ?? 0).toDouble(),
-      rating: (json['rating'] ?? 0).toDouble(),
-      phone: json['phone'] ?? '',
-      photoUrl: json['photo_url'] ?? '',
-      openHours: json['open_hours'] ?? '-',
-      category: json['category'] ?? '',
-    );
+factory Place.fromJson(Map<String, dynamic> json) {
+  return Place(
+    id: json['id'] ?? '',
+    name: json['name'] ?? '',
+    address: json['address'] ?? '',
+    latitude: (json['latitude'] ?? 0).toDouble(),
+    longitude: (json['longitude'] ?? 0).toDouble(),
+    rating: (json['rating'] ?? 0).toDouble(),
+    phone: json['phone'] ?? '',
+    photoUrl: json['photo_url'] ?? '',
+    openHours: json['open_hours'] ?? '-',
+    category: json['category'] != null
+        ? List<String>.from(json['category'])
+        : [],
+  );
+}
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'address': address,
+      'latitude': latitude,
+      'longitude': longitude,
+      'rating': rating,
+      'phone': phone,
+      'photo_url': photoUrl,
+      'open_hours': openHours,
+      'category': category,
+    };
   }
 }
