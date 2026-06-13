@@ -29,16 +29,26 @@ class Place {
   });
 
 factory Place.fromJson(Map<String, dynamic> json) {
-  return Place(
-    id: json['id'] ?? '',
-    name: json['name'] ?? '',
-    address: json['address'] ?? '',
-    latitude: (json['latitude'] ?? 0).toDouble(),
-    longitude: (json['longitude'] ?? 0).toDouble(),
-    rating: (json['rating'] ?? 0).toDouble(),
-    phone: json['phone'] ?? '',
-    photoUrl: json['photo_url'] ?? '',
-    openHours: json['open_hours'] ?? '-',
+    // Fungsi bantuan untuk memastikan output selalu String dengan aman
+    String parseString(dynamic value) {
+      if (value == null) return '';
+      if (value is List) {
+        // Jika API mengembalikan array, ambil item pertamanya saja
+        return value.isNotEmpty ? value.first.toString() : '';
+      }
+      return value.toString();
+    }
+
+    return Place(
+      id: parseString(json['id']),
+      name: parseString(json['name']),
+      address: parseString(json['address']),
+      latitude: (json['latitude'] ?? 0).toDouble(),
+      longitude: (json['longitude'] ?? 0).toDouble(),
+      rating: (json['rating'] ?? 0).toDouble(),
+      phone: parseString(json['phone']),
+      photoUrl: parseString(json['photo_url']),
+      openHours: json['open_hours'] != null ? parseString(json['open_hours']) : '-',
     category: json['category'] != null
         ? List<String>.from(json['category'])
         : [],

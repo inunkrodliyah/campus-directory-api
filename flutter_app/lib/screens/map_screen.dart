@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/place.dart';
 import '../services/api_service.dart';
 import 'detail_screen.dart';
@@ -18,7 +19,6 @@ class _MapScreenState extends State<MapScreen> {
   LatLng? userLocation;
   bool isLoading = true;
   final MapController _mapController = MapController();
-
   final LatLng defaultCenter = const LatLng(-7.2704, 112.7609);
 
   @override
@@ -29,13 +29,13 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _init() async {
     await Future.wait([_fetchPlaces(), _getUserLocation()]);
-    setState(() => isLoading = false);
+    if (mounted) setState(() => isLoading = false);
   }
 
   Future<void> _fetchPlaces() async {
     try {
       final data = await ApiService.getPlaces();
-      setState(() => places = data);
+      if (mounted) setState(() => places = data);
     } catch (e) {
       debugPrint('Error fetch places: $e');
     }
@@ -50,24 +50,116 @@ class _MapScreenState extends State<MapScreen> {
       if (permission == LocationPermission.deniedForever) return;
 
       final position = await Geolocator.getCurrentPosition();
-      setState(() {
-        userLocation = LatLng(position.latitude, position.longitude);
-      });
+      if (mounted) {
+        setState(() {
+          userLocation = LatLng(position.latitude, position.longitude);
+        });
+      }
     } catch (e) {
       debugPrint('GPS error: $e');
     }
+  }
+
+  String _getDistance(Place place) {
+    if (userLocation == null) return '';
+    final distanceInMeters = Geolocator.distanceBetween(
+      userLocation!.latitude,
+      userLocation!.longitude,
+      place.latitude,
+      place.longitude,
+    );
+    if (distanceInMeters < 1000) {
+      return '${distanceInMeters.toStringAsFixed(0)} m';
+    } else {
+      return '${(distanceInMeters / 1000).toStringAsFixed(1)} km';
+    }
+  }
+
+  // Tampilkan Detail Ringkas di Bottom Sheet
+  void _showPlaceSummary(Place place) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  ClipRidge(
+                    borderRadius: BorderRadius.circular(16),
+                    child: CachedNetworkImage(
+                      imageUrl: place.photoUrl,
+                      width: 80,
+                      height: 80,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(color: Colors.grey[200]),
+                      errorWidget: (context, url, error) => Container(color: Colors.grey[200], child: const Icon(Icons.image)),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const SizedBox(width: 4),
+                            Text('${place.rating}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            const SizedBox(width: 12),
+                            if (_getDistance(place).isNotEmpty) ...[
+                              Icon(Icons.directions_walk, color: Colors.blue[800], size: 16),
+                              const SizedBox(width: 4),
+                              Text(_getDistance(place), style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.w600)),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[800],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => DetailScreen(place: place, userLocation: userLocation)),
+                    );
+                  },
+                  child: const Text('Lihat Detail Lengkap', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              )
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Peta Fotocopy',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Peta Kampus', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.blue[800],
         foregroundColor: Colors.white,
+        centerTitle: true,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -78,14 +170,10 @@ class _MapScreenState extends State<MapScreen> {
                 initialZoom: 15,
               ),
               children: [
-                // Layer peta OpenStreetMap
                 TileLayer(
-                  urlTemplate:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   userAgentPackageName: 'com.example.campus_directory',
                 ),
-
-                // Marker lokasi user
                 if (userLocation != null)
                   MarkerLayer(
                     markers: [
@@ -98,95 +186,29 @@ class _MapScreenState extends State<MapScreen> {
                             color: Colors.blue[800],
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 6,
-                                offset: Offset(0, 3),
-                              ),
-                            ],
+                            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
                           ),
-                          child: const Icon(
-                            Icons.person_pin,
-                            color: Colors.white,
-                            size: 30,
-                          ),
+                          child: const Icon(Icons.my_location, color: Colors.white, size: 28),
                         ),
                       ),
                     ],
                   ),
-
-                // Marker tempat fotocopy
                 MarkerLayer(
                   markers: places.map((place) {
                     return Marker(
                       point: LatLng(place.latitude, place.longitude),
-                      width: 80,
-                      height: 70,
+                      width: 45,
+                      height: 45,
                       child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DetailScreen(
-                                place: place,
-                                userLocation: userLocation,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Column(
-                          children: [
-                            // Label nama (muncul di atas icon)
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(4),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 3,
-                                  ),
-                                ],
-                              ),
-                              child: Text(
-                                place.name.length > 10
-                                    ? '${place.name.substring(0, 10)}...'
-                                    : place.name,
-                                style: const TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            // Icon fotocopy
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: Colors.orange[700],
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: Colors.white, width: 2),
-                                boxShadow: const [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 4,
-                                    offset: Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.print,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                            ),
-                          ],
+                        onTap: () => _showPlaceSummary(place),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.orange[700],
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2.5),
+                            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+                          ),
+                          child: const Icon(Icons.print, color: Colors.white, size: 20),
                         ),
                       ),
                     );
@@ -194,18 +216,25 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ],
             ),
-
-      // Tombol ke lokasi user
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.blue[800],
+        backgroundColor: Colors.white,
         onPressed: () async {
           await _getUserLocation();
           if (userLocation != null) {
             _mapController.move(userLocation!, 15);
           }
         },
-        child: const Icon(Icons.my_location, color: Colors.white),
+        child: Icon(Icons.my_location, color: Colors.blue[800]),
       ),
     );
   }
+}
+
+// Widget Bantuan
+class ClipRidge extends StatelessWidget {
+  final Widget child;
+  final BorderRadius borderRadius;
+  const ClipRidge({super.key, required this.child, required this.borderRadius});
+  @override
+  Widget build(BuildContext context) => ClipRRect(borderRadius: borderRadius, child: child);
 }
