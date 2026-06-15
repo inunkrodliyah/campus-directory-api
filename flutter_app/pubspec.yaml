@@ -38,6 +38,7 @@ dependencies:
   url_launcher: ^6.2.0
   cached_network_image: ^3.3.0
   google_fonts: ^6.3.2
+  google_maps_flutter: ^2.14.0
 
 dev_dependencies:
   flutter_test:

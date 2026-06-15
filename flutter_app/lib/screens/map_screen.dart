@@ -17,13 +17,17 @@ class MapScreen extends StatefulWidget {
 class _MapScreenState extends State<MapScreen> {
   List<Place> places = [];
   LatLng? userLocation;
-  bool isLoading = true;
+  bool isLoading = ApiService.cachedPlaces == null;
   final MapController _mapController = MapController();
   final LatLng defaultCenter = const LatLng(-7.2704, 112.7609);
 
   @override
   void initState() {
     super.initState();
+    if (ApiService.cachedPlaces != null) {
+      places = ApiService.cachedPlaces!;
+    }
+
     _init();
   }
 
@@ -97,8 +101,13 @@ class _MapScreenState extends State<MapScreen> {
                       width: 80,
                       height: 80,
                       fit: BoxFit.cover,
-                      placeholder: (context, url) => Container(color: Colors.grey[200]),
-                      errorWidget: (context, url, error) => Container(color: Colors.grey[200], child: const Icon(Icons.image)),
+                      placeholder:
+                          (context, url) => Container(color: Colors.grey[200]),
+                      errorWidget:
+                          (context, url, error) => Container(
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.image),
+                          ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -106,18 +115,45 @@ class _MapScreenState extends State<MapScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(place.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis),
+                        Text(
+                          place.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            const Icon(Icons.star, color: Colors.amber, size: 16),
+                            const Icon(
+                              Icons.star,
+                              color: Colors.amber,
+                              size: 16,
+                            ),
                             const SizedBox(width: 4),
-                            Text('${place.rating}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              '${place.rating}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(width: 12),
                             if (_getDistance(place).isNotEmpty) ...[
-                              Icon(Icons.directions_walk, color: Colors.blue[800], size: 16),
+                              Icon(
+                                Icons.directions_walk,
+                                color: Colors.blue[800],
+                                size: 16,
+                              ),
                               const SizedBox(width: 4),
-                              Text(_getDistance(place), style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.w600)),
+                              Text(
+                                _getDistance(place),
+                                style: TextStyle(
+                                  color: Colors.blue[800],
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ],
                           ],
                         ),
@@ -133,18 +169,32 @@ class _MapScreenState extends State<MapScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[800],
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                   ),
                   onPressed: () {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => DetailScreen(place: place, userLocation: userLocation)),
+                      MaterialPageRoute(
+                        builder:
+                            (_) => DetailScreen(
+                              place: place,
+                              userLocation: userLocation,
+                            ),
+                      ),
                     );
                   },
-                  child: const Text('Lihat Detail Lengkap', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    'Lihat Detail Lengkap',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              )
+              ),
             ],
           ),
         );
@@ -156,66 +206,95 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Peta Kampus', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Peta Kampus',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.blue[800],
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: userLocation ?? defaultCenter,
-                initialZoom: 15,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.campus_directory',
+      body:
+          isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: userLocation ?? defaultCenter,
+                  initialZoom: 15,
                 ),
-                if (userLocation != null)
-                  MarkerLayer(
-                    markers: [
-                      Marker(
-                        point: userLocation!,
-                        width: 60,
-                        height: 60,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.blue[800],
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 3),
-                            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 3))],
-                          ),
-                          child: const Icon(Icons.my_location, color: Colors.white, size: 28),
-                        ),
-                      ),
-                    ],
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.campus_directory',
                   ),
-                MarkerLayer(
-                  markers: places.map((place) {
-                    return Marker(
-                      point: LatLng(place.latitude, place.longitude),
-                      width: 45,
-                      height: 45,
-                      child: GestureDetector(
-                        onTap: () => _showPlaceSummary(place),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.orange[700],
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 2.5),
-                            boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2))],
+                  if (userLocation != null)
+                    MarkerLayer(
+                      markers: [
+                        Marker(
+                          point: userLocation!,
+                          width: 60,
+                          height: 60,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.blue[800],
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 3),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Colors.black26,
+                                  blurRadius: 6,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.my_location,
+                              color: Colors.white,
+                              size: 28,
+                            ),
                           ),
-                          child: const Icon(Icons.print, color: Colors.white, size: 20),
                         ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
+                      ],
+                    ),
+                  MarkerLayer(
+                    markers:
+                        places.map((place) {
+                          return Marker(
+                            point: LatLng(place.latitude, place.longitude),
+                            width: 45,
+                            height: 45,
+                            child: GestureDetector(
+                              onTap: () => _showPlaceSummary(place),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[700],
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 2.5,
+                                  ),
+                                  boxShadow: const [
+                                    BoxShadow(
+                                      color: Colors.black26,
+                                      blurRadius: 4,
+                                      offset: Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.print,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                  ),
+                ],
+              ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white,
         onPressed: () async {
@@ -236,5 +315,6 @@ class ClipRidge extends StatelessWidget {
   final BorderRadius borderRadius;
   const ClipRidge({super.key, required this.child, required this.borderRadius});
   @override
-  Widget build(BuildContext context) => ClipRRect(borderRadius: borderRadius, child: child);
+  Widget build(BuildContext context) =>
+      ClipRRect(borderRadius: borderRadius, child: child);
 }

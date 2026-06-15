@@ -17,7 +17,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Place> allPlaces = [];
   List<Place> filteredPlaces = [];
   LatLng? userLocation;
-  bool isLoading = true;
+  bool isLoading = ApiService.cachedPlaces == null;
   String errorMessage = '';
   final TextEditingController _searchController = TextEditingController();
   
@@ -34,10 +34,17 @@ class _HomeScreenState extends State<HomeScreen> {
   // State untuk Rating
   double minRating = 0;
 
-  @override
+@override
   void initState() {
     super.initState();
-    fetchPlaces();
+    
+    // Jika data sudah di-preload saat SplashScreen, langsung gunakan!
+    if (ApiService.cachedPlaces != null) {
+      allPlaces = ApiService.cachedPlaces!;
+      filteredPlaces = allPlaces;
+    }
+
+    fetchPlaces(); // Tetap dipanggil untuk background sync
     _getUserLocation();
   }
 

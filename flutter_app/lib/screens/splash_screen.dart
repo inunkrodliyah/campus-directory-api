@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../main.dart';
+import '../services/api_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -34,12 +35,33 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    Timer(const Duration(seconds: 3), () {
+    // Panggil fungsi pre-load alih-alih Timer biasa
+    _preloadDataAndNavigate();
+  }
+
+  Future<void> _preloadDataAndNavigate() async {
+    // Menjalankan animasi tunggu 3 detik BERSAMAAN dengan proses ambil data dari API
+    await Future.wait([
+      Future.delayed(const Duration(seconds: 3)),
+      _fetchInitialData(),
+    ]);
+
+    if (mounted) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const MainScreen()),
       );
-    });
+    }
+  }
+
+  Future<void> _fetchInitialData() async {
+    try {
+      await ApiService.getPlaces();
+    } catch (e) {
+      // Jika error (misal no internet), abaikan saja. 
+      // Nanti di HomeScreen akan ditangani (menampilkan error/coba lagi)
+      debugPrint('Preload gagal: $e');
+    }
   }
 
   @override

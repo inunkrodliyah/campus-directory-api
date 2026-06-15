@@ -6,34 +6,34 @@ class ApiService {
   static const String baseUrl =
       'https://campus-directory-api.vercel.app';
 
+static List<Place>? cachedPlaces;
+
   // =========================
   // GET ALL PLACES
   // =========================
-  static Future<List<Place>> getPlaces() async {
+static Future<List<Place>> getPlaces({bool forceRefresh = false}) async {
+    // Jika data sudah ada di cache, langsung kembalikan tanpa request API lagi
+    if (!forceRefresh && cachedPlaces != null) {
+      return cachedPlaces!;
+    }
+
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/places'),
-      );
+      final response = await http.get(Uri.parse('$baseUrl/places'));
 
       if (response.statusCode == 200) {
-        final List<dynamic> data =
-            jsonDecode(response.body);
-
-        return data
-            .map((json) => Place.fromJson(json))
-            .toList();
+        final List<dynamic> data = jsonDecode(response.body);
+        
+        // Simpan data hasil fetch ke cache
+        cachedPlaces = data.map((json) => Place.fromJson(json)).toList();
+        
+        return cachedPlaces!;
       }
 
-      throw Exception(
-        'Server Error (${response.statusCode})',
-      );
+      throw Exception('Server Error (${response.statusCode})');
     } catch (e) {
-      throw Exception(
-        'Gagal mengambil data tempat: $e',
-      );
+      throw Exception('Gagal mengambil data tempat: $e');
     }
   }
-
   // =========================
   // ADD PLACE
   // =========================
