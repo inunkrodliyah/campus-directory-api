@@ -204,25 +204,25 @@ class _MapScreenState extends State<MapScreen> {
   Set<Marker> _buildMarkers() {
     final Set<Marker> markerSet = {};
 
-    // 1. Marker lokasi user jika ada
+    // 1. Marker lokasi user jika ada (biru)
     if (userLocation != null) {
       markerSet.add(
         Marker(
           markerId: const MarkerId('user_location'),
           position: LatLng(userLocation!.latitude, userLocation!.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
           infoWindow: const InfoWindow(title: 'Lokasi Anda'),
         ),
       );
     }
 
-    // 2. Marker tempat-tempat fotocopy
+    // 2. Marker tempat-tempat fotocopy (merah)
     for (final place in places) {
       markerSet.add(
         Marker(
           markerId: MarkerId(place.id),
           position: LatLng(place.latitude, place.longitude),
-          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
           onTap: () => _showPlaceSummary(place),
         ),
       );
@@ -240,7 +240,7 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Peta Kampus',
+          'Peta Lokasi Fotocopy',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Colors.blue[800],
