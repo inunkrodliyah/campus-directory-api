@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
-import 'screens/map_screen.dart';
+import 'screens/saved_screen.dart';
 import 'screens/splash_screen.dart';
+import 'services/favorites_manager.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await FavoritesManager.init();
   runApp(const MyApp());
 }
 
@@ -13,18 +16,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Campus Directory',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1565C0)), // Menggunakan varian Blue 800
-        useMaterial3: true,
-        // Terapkan tipografi modern secara global
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(
-          Theme.of(context).textTheme,
+    return ScaffoldMessenger(
+      child: MaterialApp(
+        title: 'Campus Directory',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1565C0)), // Menggunakan varian Blue 800
+          useMaterial3: true,
+          textTheme: GoogleFonts.plusJakartaSansTextTheme(
+            Theme.of(context).textTheme,
+          ),
         ),
+        home: const SplashScreen(),
       ),
-      home: const SplashScreen(),
     );
   }
 }
@@ -41,7 +45,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const MapScreen(),
+    const SavedScreen(),
   ];
 
   @override
@@ -56,14 +60,14 @@ class _MainScreenState extends State<MainScreen> {
         elevation: 10,
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.list_alt_outlined),
-            selectedIcon: Icon(Icons.list_alt, color: Color(0xFF1565C0)),
-            label: 'Daftar',
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore, color: Color(0xFF1565C0)),
+            label: 'Explore',
           ),
           NavigationDestination(
-            icon: Icon(Icons.map_outlined),
-            selectedIcon: Icon(Icons.map, color: Color(0xFF1565C0)),
-            label: 'Peta',
+            icon: Icon(Icons.bookmark_outline_rounded),
+            selectedIcon: Icon(Icons.bookmark, color: Color(0xFF1565C0)),
+            label: 'Saved',
           ),
         ],
       ),

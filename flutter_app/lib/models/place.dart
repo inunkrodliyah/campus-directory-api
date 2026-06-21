@@ -49,10 +49,12 @@ factory Place.fromJson(Map<String, dynamic> json) {
       phone: parseString(json['phone']),
       photoUrl: parseString(json['photo_url']),
       openHours: json['open_hours'] != null ? parseString(json['open_hours']) : '-',
-    category: json['category'] != null
-        ? List<String>.from(json['category'])
-        : [],
-  );
+      category: json['category'] != null
+          ? (json['category'] is List
+              ? List<String>.from(json['category'].map((x) => x.toString()))
+              : [json['category'].toString()])
+          : [],
+    );
 }
   Map<String, dynamic> toJson() {
     return {

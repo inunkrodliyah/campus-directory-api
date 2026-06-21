@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as ll2;
 import 'package:geolocator/geolocator.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/place.dart';
@@ -16,9 +16,9 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   List<Place> places = [];
-  LatLng? userLocation;
+  ll2.LatLng? userLocation;
   bool isLoading = ApiService.cachedPlaces == null;
-  final MapController _mapController = MapController();
+  GoogleMapController? _googleMapController;
   final LatLng defaultCenter = const LatLng(-7.2704, 112.7609);
 
   @override
@@ -27,7 +27,6 @@ class _MapScreenState extends State<MapScreen> {
     if (ApiService.cachedPlaces != null) {
       places = ApiService.cachedPlaces!;
     }
-
     _init();
   }
 
@@ -56,7 +55,7 @@ class _MapScreenState extends State<MapScreen> {
       final position = await Geolocator.getCurrentPosition();
       if (mounted) {
         setState(() {
-          userLocation = LatLng(position.latitude, position.longitude);
+          userLocation = ll2.LatLng(position.latitude, position.longitude);
         });
       }
     } catch (e) {
@@ -202,8 +201,42 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  Set<Marker> _buildMarkers() {
+    final Set<Marker> markerSet = {};
+
+    // 1. Marker lokasi user jika ada
+    if (userLocation != null) {
+      markerSet.add(
+        Marker(
+          markerId: const MarkerId('user_location'),
+          position: LatLng(userLocation!.latitude, userLocation!.longitude),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          infoWindow: const InfoWindow(title: 'Lokasi Anda'),
+        ),
+      );
+    }
+
+    // 2. Marker tempat-tempat fotocopy
+    for (final place in places) {
+      markerSet.add(
+        Marker(
+          markerId: MarkerId(place.id),
+          position: LatLng(place.latitude, place.longitude),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange),
+          onTap: () => _showPlaceSummary(place),
+        ),
+      );
+    }
+
+    return markerSet;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final LatLng cameraTarget = userLocation != null
+        ? LatLng(userLocation!.latitude, userLocation!.longitude)
+        : defaultCenter;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -214,93 +247,34 @@ class _MapScreenState extends State<MapScreen> {
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
-      body:
-          isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: userLocation ?? defaultCenter,
-                  initialZoom: 15,
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.example.campus_directory',
-                  ),
-                  if (userLocation != null)
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: userLocation!,
-                          width: 60,
-                          height: 60,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.blue[800],
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 3),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 6,
-                                  offset: Offset(0, 3),
-                                ),
-                              ],
-                            ),
-                            child: const Icon(
-                              Icons.my_location,
-                              color: Colors.white,
-                              size: 28,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  MarkerLayer(
-                    markers:
-                        places.map((place) {
-                          return Marker(
-                            point: LatLng(place.latitude, place.longitude),
-                            width: 45,
-                            height: 45,
-                            child: GestureDetector(
-                              onTap: () => _showPlaceSummary(place),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.orange[700],
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.white,
-                                    width: 2.5,
-                                  ),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black26,
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.print,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                  ),
-                ],
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: cameraTarget,
+                zoom: 15,
               ),
+              onMapCreated: (GoogleMapController controller) {
+                _googleMapController = controller;
+              },
+              markers: _buildMarkers(),
+              myLocationEnabled: false,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: true,
+              buildingsEnabled: true, // Gedung 3D
+              tiltGesturesEnabled: true,
+            ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white,
         onPressed: () async {
           await _getUserLocation();
-          if (userLocation != null) {
-            _mapController.move(userLocation!, 15);
+          if (userLocation != null && _googleMapController != null) {
+            _googleMapController!.animateCamera(
+              CameraUpdate.newLatLngZoom(
+                LatLng(userLocation!.latitude, userLocation!.longitude),
+                15,
+              ),
+            );
           }
         },
         child: Icon(Icons.my_location, color: Colors.blue[800]),
