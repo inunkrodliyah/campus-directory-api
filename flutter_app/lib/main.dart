@@ -21,11 +21,12 @@ class MyApp extends StatelessWidget {
         title: 'Campus Directory',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1565C0)), // Menggunakan varian Blue 800
-          useMaterial3: true,
-          textTheme: GoogleFonts.plusJakartaSansTextTheme(
-            Theme.of(context).textTheme,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF1565C0), // Menggunakan varian Blue 800
+            background: Colors.white,
           ),
+          useMaterial3: true,
+          textTheme: GoogleFonts.plusJakartaSansTextTheme(),
         ),
         home: const SplashScreen(),
       ),
@@ -52,24 +53,44 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        indicatorColor: Colors.blue.shade100,
-        backgroundColor: Colors.white,
-        elevation: 10,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore, color: Color(0xFF1565C0)),
-            label: 'Explore',
+      // PERBAIKAN TOTAL WARNA: Menu bawah diubah dari putih polos menjadi Slate Blue pastel segar dengan border penanda tegas
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF0F4F8), // Background bernuansa sejuk, tidak putih polos kaku
+          border: Border(
+            top: BorderSide(
+              color: Colors.blue.shade100, // Garis pembatas biru tipis estetik
+              width: 1.2,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.bookmark_outline_rounded),
-            selectedIcon: Icon(Icons.bookmark, color: Color(0xFF1565C0)),
-            label: 'Saved',
-          ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.blue.shade900.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) => setState(() => _currentIndex = index),
+          indicatorColor: Colors.blue.shade200, // Efek lingkaran aktif lebih menyala kontras
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          height: 65,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.explore_outlined, color: Color(0xFF475569)),
+              selectedIcon: Icon(Icons.explore_rounded, color: Color(0xFF0D47A1)),
+              label: 'Explore',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.bookmark_outline_rounded, color: Color(0xFF475569)),
+              selectedIcon: Icon(Icons.bookmark_rounded, color: Color(0xFF0D47A1)),
+              label: 'Saved',
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -57,7 +57,7 @@ class _DetailScreenState extends State<DetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF8FAFC), 
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -66,7 +66,6 @@ class _DetailScreenState extends State<DetailScreen> {
             backgroundColor: Colors.blue[800],
             foregroundColor: Colors.white,
             elevation: 0,
-            // PERBAIKAN: Menghapus properti actions [] dari sini agar ikon bookmark di pojok kanan atas hilang!
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
@@ -76,7 +75,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     fit: BoxFit.cover,
                     errorWidget: (context, url, error) => Container(
                       color: Colors.blue[900],
-                      child: const Icon(Icons.store, size: 80, color: Colors.white30),
+                      child: const Icon(Icons.store_rounded, size: 80, color: Colors.white30),
                     ),
                   ),
                   Container(
@@ -103,7 +102,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     children: [
                       Text(
                         widget.place.name,
-                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, height: 1.2),
+                        style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, height: 1.2, color: Color(0xFF1E293B)),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
@@ -126,12 +125,16 @@ class _DetailScreenState extends State<DetailScreen> {
                       ),
                       const SizedBox(height: 32),
                       
-                      const Text('Informasi Tempat', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Informasi Tempat', 
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                      ),
                       const SizedBox(height: 16),
 
+                      // PERBAIKAN WARNA KARTU: Diisi dengan paduan warna pastel kustom yang hidup dan dinamis
                       _infoCard(
                         icon: Icons.star_rounded,
-                        color: Colors.amber.shade600,
+                        color: Colors.amber.shade700,
                         label: 'Rating',
                         value: '${widget.place.rating} / 5.0',
                         trailing: Row(
@@ -144,14 +147,14 @@ class _DetailScreenState extends State<DetailScreen> {
                           }),
                         ),
                       ),
-                      _infoCard(icon: Icons.location_on_rounded, color: Colors.red.shade400, label: 'Alamat', value: widget.place.address),
-                      _infoCard(icon: Icons.access_time_filled_rounded, color: Colors.blue.shade400, label: 'Jam Buka', value: widget.place.openHours),
-                      _infoCard(icon: Icons.phone_rounded, color: Colors.green.shade400, label: 'Telepon', value: widget.place.phone.isEmpty ? 'Tidak ada nomor' : widget.place.phone),
-                      _infoCard(icon: Icons.directions_walk_rounded, color: Colors.orange.shade400, label: 'Jarak dari lokasi Anda', value: _getDistance()),
+                      _infoCard(icon: Icons.location_on_rounded, color: Colors.red.shade600, label: 'Alamat', value: widget.place.address),
+                      _infoCard(icon: Icons.access_time_filled_rounded, color: Colors.blue.shade600, label: 'Jam Buka', value: widget.place.openHours),
+                      _infoCard(icon: Icons.phone_rounded, color: Colors.green.shade600, label: 'Telepon', value: widget.place.phone.isEmpty ? 'Tidak ada nomor' : widget.place.phone),
+                      _infoCard(icon: Icons.directions_walk_rounded, color: Colors.orange.shade600, label: 'Jarak dari lokasi Anda', value: _getDistance()),
 
                       const SizedBox(height: 12),
 
-                      // PERBAIKAN: Memasang tanda Saved (Bookmark) berbentuk kartu yang sejajar dengan kartu informasi lainnya di bawah
+                      // Mengubah gaya tombol simpan agar bernuansa Amber-Gold premium yang kaya warna
                       ValueListenableBuilder<List<String>>(
                         valueListenable: FavoritesManager.favoritesNotifier,
                         builder: (context, savedIds, _) {
@@ -175,21 +178,28 @@ class _DetailScreenState extends State<DetailScreen> {
                             child: Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: isSaved ? Colors.amber.shade50.withOpacity(0.4) : Colors.grey.shade50,
+                                color: isSaved ? Colors.amber.shade50.withValues(alpha: 0.6) : Colors.orange.shade50.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(16),
-                                border: Border.all(color: isSaved ? Colors.amber.shade200 : Colors.grey.shade200),
+                                border: Border.all(color: isSaved ? Colors.amber.shade300 : Colors.orange.shade200, width: 1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: isSaved ? Colors.amber.shade600.withValues(alpha: 0.05) : Colors.orange.shade600.withValues(alpha: 0.01),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
                               child: Row(
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: isSaved ? Colors.amber.shade100 : Colors.grey.shade200,
+                                      color: isSaved ? Colors.amber.shade100 : Colors.orange.shade100.withValues(alpha: 0.7),
                                       shape: BoxShape.circle,
                                     ),
                                     child: Icon(
                                       isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-                                      color: isSaved ? Colors.amber.shade800 : Colors.grey.shade600,
+                                      color: isSaved ? Colors.amber.shade900 : Colors.orange.shade800,
                                       size: 22,
                                     ),
                                   ),
@@ -201,22 +211,23 @@ class _DetailScreenState extends State<DetailScreen> {
                                         Text(
                                           'Simpan Tempat',
                                           style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[600],
-                                            fontWeight: FontWeight.w600,
+                                            fontSize: 11,
+                                            color: isSaved ? Colors.amber.shade900 : Colors.orange.shade800,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 0.3,
                                           ),
                                         ),
                                         const SizedBox(height: 4),
                                         Text(
                                           isSaved ? 'Toko ini ada di daftar favorit Anda' : 'Ketuk untuk menambahkan ke favorit',
-                                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.black87),
+                                          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: isSaved ? Colors.amber.shade900 : const Color(0xFF0F172A)),
                                         ),
                                       ],
                                     ),
                                   ),
                                   Icon(
                                     Icons.chevron_right_rounded,
-                                    color: isSaved ? Colors.amber.shade800 : Colors.grey.shade400,
+                                    color: isSaved ? Colors.amber.shade800 : Colors.orange.shade400,
                                   ),
                                 ],
                               ),
@@ -253,21 +264,32 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
+  // RESTRUKTURISASI WARNA: Mengubah total dari putih polos kaku menjadi kanvas pastel transparan hidup sesuai tema warna ikonnya masing-masing
   Widget _infoCard({required IconData icon, required Color color, required String label, required String value, Widget? trailing}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: color.withValues(alpha: 0.06), // Warna dasar background transparan pastel mengikuti warna ikon bawaan
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: color.withValues(alpha: 0.15), width: 1), // Garis border senada dengan tema warna kartu
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.15), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15), // Lingkaran pembungkus ikon dibuat lebih kontras pekat
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: color, size: 22),
           ),
           const SizedBox(width: 16),
@@ -275,9 +297,24 @@ class _DetailScreenState extends State<DetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w600)),
+                Text(
+                  label, 
+                  style: TextStyle(
+                    fontSize: 11, 
+                    color: color.withValues(alpha: 0.8), 
+                    fontWeight: FontWeight.bold, 
+                    letterSpacing: 0.5,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(value, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.black87)),
+                Text(
+                  value, 
+                  style: const TextStyle(
+                    fontSize: 15, 
+                    fontWeight: FontWeight.w700, 
+                    color: Color(0xFF0F172A), // Warna teks utama gelap pekat super nyaman dibaca
+                  ),
+                ),
               ],
             ),
           ),

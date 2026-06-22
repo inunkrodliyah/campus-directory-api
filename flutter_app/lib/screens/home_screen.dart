@@ -348,7 +348,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Search Bar
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                               child: TextField(
@@ -398,7 +397,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             _buildInteractiveMapBanner(),
                             _buildResponsiveCategorySection(),
 
-                            // Penyedia Terdekat Header
                             const Padding(
                               padding: EdgeInsets.fromLTRB(16, 24, 16, 12),
                               child: Text(
@@ -411,7 +409,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
 
-                            // RESPONSIVE DAFTAR TOKO
                             filteredPlaces.isEmpty
                                 ? _buildEmptyState()
                                 : Padding(
@@ -549,7 +546,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // PERBAIKAN RESPONSIVE: Menggunakan Flexbox & Wrap agar melebar penuh di desktop dan melengkung/turun di mobile
   Widget _buildResponsiveCategorySection() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -568,16 +564,14 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-          // Menggunakan LayoutBuilder internal untuk membedakan gaya sebaran item
           LayoutBuilder(
             builder: (context, catConstraints) {
               final bool useWideStretch = catConstraints.maxWidth > 600;
 
               return Wrap(
-                // Jika layar lebar, rentangkan item kategori agar memenuhi batas ujung kanan-kiri banner atas
                 alignment: useWideStretch ? WrapAlignment.spaceBetween : WrapAlignment.start,
-                runSpacing: 16, // Jarak vertikal otomatis jika item terpaksa turun ke bawah (mode mobile)
-                spacing: useWideStretch ? 0 : 12, // Jarak horizontal antar item jika dalam mode mobile guling biasa
+                runSpacing: 16, 
+                spacing: useWideStretch ? 0 : 12, 
                 children: uiCategories.map((cat) {
                   final bool isSelected = selectedCategory == cat['value'] ||
                       (selectedCategory == 'Jilid' && cat['value'] == 'Jilid') ||
@@ -631,7 +625,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               cat['icon'] as IconData,
                               color: isSelected ? Colors.white : const Color(0xFF475569),
                               size: 26,
-                        ),
+                            ),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -728,7 +722,7 @@ class _PlaceCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.blue.shade900.withValues(alpha: 0.03), // Memperhalus bayangan luar kartu toko utama
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -759,14 +753,16 @@ class _PlaceCard extends StatelessWidget {
                       child: Icon(Icons.store_rounded, color: Colors.blue.shade200, size: 40),
                     ),
                   ),
+                  // PERBAIKAN: Mengubah badge rating menjadi emas pastel yang kaya warna
                   Positioned(
                     top: 12,
                     right: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.95),
+                        color: const Color(0xFFFFF9E6), // Kuning emas pastel lembut
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFE082), width: 1),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -775,24 +771,30 @@ class _PlaceCard extends StatelessWidget {
                           const SizedBox(width: 2),
                           Text(
                             place.rating.toString(),
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Color(0xFF7F5F00)),
                           ),
                         ],
                       ),
                     ),
                   ),
+                  // PERBAIKAN: Mengubah indikator jam operasional menjadi warna premium (Hijau Emerald / Merah Rose)
                   Positioned(
                     bottom: 12,
                     left: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isOpen ? const Color(0xFF1565C0) : const Color(0xFF00695C),
+                        color: isOpen ? const Color(0xFFE6F4EA) : const Color(0xFFFCE8E6), // Emerald pastel vs Rose pastel
                         borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: isOpen ? const Color(0xFFA8DAB5) : const Color(0xFFF9A825).withValues(alpha: 0.3), width: 1),
                       ),
                       child: Text(
                         statusText,
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          color: isOpen ? const Color(0xFF137333) : const Color(0xFFC5221F), 
+                          fontSize: 12, 
+                          fontWeight: FontWeight.bold
+                        ),
                       ),
                     ),
                   ),
@@ -812,7 +814,7 @@ class _PlaceCard extends StatelessWidget {
                             place.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF0F172A)),
                           ),
                         ),
                         if (distance.isNotEmpty) ...[
@@ -820,11 +822,11 @@ class _PlaceCard extends StatelessWidget {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.near_me_rounded, size: 14, color: Colors.blue[800]),
+                              Icon(Icons.near_me_rounded, size: 14, color: Colors.blue[700]),
                               const SizedBox(width: 2),
                               Text(
                                 distance,
-                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue[800]),
+                                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.blue[700]),
                               ),
                             ],
                           ),
@@ -834,7 +836,7 @@ class _PlaceCard extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(
                       place.address,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                      style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

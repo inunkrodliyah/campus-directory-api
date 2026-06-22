@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../main.dart';
 import '../services/api_service.dart';
+import '../models/place.dart'; // Memastikan model Place diimport untuk deklarasi tipe data list
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,26 +36,22 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Memulai proses pramuat data dan navigasi transisi mulus
     _preloadDataAndNavigate();
   }
 
   Future<void> _preloadDataAndNavigate() async {
-    // Jalankan pengambilan API bersamaan dengan durasi minimal tampilan splash (3 detik)
+    // PERBAIKAN UTAMA 1: Menegaskan kembalian error menjadi <Place>[] agar lolos dari validasi type-safety Dart
     await Future.wait([
-      ApiService.getPlaces().catchError((_) => []),
+      ApiService.getPlaces().catchError((_) => <Place>[]),
       Future.delayed(const Duration(seconds: 3)),
     ]);
 
     if (mounted) {
-      // PERBAIKAN UTAMA: Mengganti MaterialPageRoute bawaan dengan PageRouteBuilder kustom
-      // untuk menciptakan efek transisi memudar (Fade Transition) yang sangat halus saat masuk ke halaman utama (MainScreen)
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) => const MainScreen(),
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            // Durasi dan kurva kehalusan transisi dikendalikan oleh animasi transisi internal
             var curve = Curves.easeInOut;
             var curvedAnimation = CurvedAnimation(
               parent: animation,
@@ -66,7 +63,7 @@ class _SplashScreenState extends State<SplashScreen>
               child: child,
             );
           },
-          transitionDuration: const Duration(milliseconds: 800), // Durasi transisi memudar (800ms) agar terasa premium
+          transitionDuration: const Duration(milliseconds: 800),
         ),
       );
     }
@@ -102,7 +99,6 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo / Icon pembungkus dengan bayangan halus
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: const BoxDecoration(
@@ -117,13 +113,12 @@ class _SplashScreenState extends State<SplashScreen>
                     ],
                   ),
                   child: Icon(
-                    Icons.print_rounded, // Menggunakan versi rounded agar serasi dengan sudut tumpul
+                    Icons.print_rounded,
                     size: 60,
                     color: Colors.blue[800],
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Nama aplikasi
                 const Text(
                   'Fotocopy Sekitar Kampus',
                   style: TextStyle(
@@ -142,12 +137,12 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 48),
-                // Indikator Loading bawah
                 SizedBox(
                   width: 40,
                   height: 40,
                   child: CircularProgressIndicator(
-                    color: Colors.white.withOpacity(0.9),
+                    // PERBAIKAN UTAMA 2: Mengganti .withOpacity ke .withValues untuk menghindari warning deprecation
+                    color: Colors.white.withValues(alpha: 0.9),
                     strokeWidth: 3,
                   ),
                 ),
