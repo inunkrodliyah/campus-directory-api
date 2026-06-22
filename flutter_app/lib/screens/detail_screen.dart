@@ -6,7 +6,7 @@ import '../models/place.dart';
 import '../services/favorites_manager.dart';
 import 'route_screen.dart';
 
-class DetailScreen extends StatelessWidget {
+class DetailScreen extends StatefulWidget {
   final Place place;
   final LatLng? userLocation;
 
@@ -16,13 +16,18 @@ class DetailScreen extends StatelessWidget {
     this.userLocation,
   });
 
+  @override
+  State<DetailScreen> createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends State<DetailScreen> {
   String _getDistance() {
-    if (userLocation == null) return 'Mencari lokasi...';
+    if (widget.userLocation == null) return 'Mencari lokasi...';
     final distanceInMeters = Geolocator.distanceBetween(
-      userLocation!.latitude,
-      userLocation!.longitude,
-      place.latitude,
-      place.longitude,
+      widget.userLocation!.latitude,
+      widget.userLocation!.longitude,
+      widget.place.latitude,
+      widget.place.longitude,
     );
     if (distanceInMeters < 1000) {
       return '${distanceInMeters.toStringAsFixed(0)} m';
@@ -32,7 +37,7 @@ class DetailScreen extends StatelessWidget {
   }
 
   void _openRoute(BuildContext context) {
-    if (userLocation == null) {
+    if (widget.userLocation == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tunggu sebentar, lokasi Anda belum ditemukan.')),
       );
@@ -42,8 +47,8 @@ class DetailScreen extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => RouteScreen(
-          place: place,
-          userLocation: userLocation!,
+          place: widget.place,
+          userLocation: widget.userLocation!,
         ),
       ),
     );
@@ -61,40 +66,13 @@ class DetailScreen extends StatelessWidget {
             backgroundColor: Colors.blue[800],
             foregroundColor: Colors.white,
             elevation: 0,
-            actions: [
-              ValueListenableBuilder<List<String>>(
-                valueListenable: FavoritesManager.favoritesNotifier,
-                builder: (context, savedIds, _) {
-                  final isSaved = savedIds.contains(place.id);
-                  return IconButton(
-                    icon: Icon(
-                      isSaved ? Icons.bookmark : Icons.bookmark_border_rounded,
-                      color: isSaved ? Colors.amber : Colors.white,
-                    ),
-                    onPressed: () {
-                      FavoritesManager.toggleSaved(place.id);
-                      ScaffoldMessenger.of(context).clearSnackBars();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            isSaved
-                                ? '${place.name} dihapus dari Saved.'
-                                : '${place.name} disimpan ke Saved.',
-                          ),
-                          duration: const Duration(seconds: 1),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ],
+            // PERBAIKAN: Menghapus properti actions [] dari sini agar ikon bookmark di pojok kanan atas hilang!
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
                 children: [
                   CachedNetworkImage(
-                    imageUrl: place.photoUrl,
+                    imageUrl: widget.place.photoUrl,
                     fit: BoxFit.cover,
                     errorWidget: (context, url, error) => Container(
                       color: Colors.blue[900],
@@ -124,14 +102,14 @@ class DetailScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        place.name,
+                        widget.place.name,
                         style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, height: 1.2),
                       ),
                       const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: place.category.map((cat) {
+                        children: widget.place.category.map((cat) {
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
@@ -155,21 +133,97 @@ class DetailScreen extends StatelessWidget {
                         icon: Icons.star_rounded,
                         color: Colors.amber.shade600,
                         label: 'Rating',
-                        value: '${place.rating} / 5.0',
+                        value: '${widget.place.rating} / 5.0',
                         trailing: Row(
                           children: List.generate(5, (i) {
                             return Icon(
-                              i < place.rating.floor() ? Icons.star_rounded : Icons.star_outline_rounded,
+                              i < widget.place.rating.floor() ? Icons.star_rounded : Icons.star_outline_rounded,
                               color: Colors.amber,
                               size: 18,
                             );
                           }),
                         ),
                       ),
-                      _infoCard(icon: Icons.location_on_rounded, color: Colors.red.shade400, label: 'Alamat', value: place.address),
-                      _infoCard(icon: Icons.access_time_filled_rounded, color: Colors.blue.shade400, label: 'Jam Buka', value: place.openHours),
-                      _infoCard(icon: Icons.phone_rounded, color: Colors.green.shade400, label: 'Telepon', value: place.phone.isEmpty ? 'Tidak ada nomor' : place.phone),
+                      _infoCard(icon: Icons.location_on_rounded, color: Colors.red.shade400, label: 'Alamat', value: widget.place.address),
+                      _infoCard(icon: Icons.access_time_filled_rounded, color: Colors.blue.shade400, label: 'Jam Buka', value: widget.place.openHours),
+                      _infoCard(icon: Icons.phone_rounded, color: Colors.green.shade400, label: 'Telepon', value: widget.place.phone.isEmpty ? 'Tidak ada nomor' : widget.place.phone),
                       _infoCard(icon: Icons.directions_walk_rounded, color: Colors.orange.shade400, label: 'Jarak dari lokasi Anda', value: _getDistance()),
+
+                      const SizedBox(height: 12),
+
+                      // PERBAIKAN: Memasang tanda Saved (Bookmark) berbentuk kartu yang sejajar dengan kartu informasi lainnya di bawah
+                      ValueListenableBuilder<List<String>>(
+                        valueListenable: FavoritesManager.favoritesNotifier,
+                        builder: (context, savedIds, _) {
+                          final isSaved = savedIds.contains(widget.place.id);
+                          return InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              FavoritesManager.toggleSaved(widget.place.id);
+                              ScaffoldMessenger.of(context).clearSnackBars();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    isSaved
+                                        ? '${widget.place.name} dihapus dari Saved.'
+                                        : '${widget.place.name} disimpan ke Saved.',
+                                  ),
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: isSaved ? Colors.amber.shade50.withOpacity(0.4) : Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: isSaved ? Colors.amber.shade200 : Colors.grey.shade200),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: isSaved ? Colors.amber.shade100 : Colors.grey.shade200,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                                      color: isSaved ? Colors.amber.shade800 : Colors.grey.shade600,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Simpan Tempat',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey[600],
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          isSaved ? 'Toko ini ada di daftar favorit Anda' : 'Ketuk untuk menambahkan ke favorit',
+                                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.black87),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.chevron_right_rounded,
+                                    color: isSaved ? Colors.amber.shade800 : Colors.grey.shade400,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
 
                       const SizedBox(height: 40),
 

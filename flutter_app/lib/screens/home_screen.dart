@@ -25,7 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   String selectedCategory = 'Semua';
   
-  // Memperbarui ikon kategori menjadi versi rounded yang lebih tebal dan solid
   final List<Map<String, dynamic>> uiCategories = [
     {
       'label': 'Fotocopy',
@@ -309,136 +308,167 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        title: Row(
-          children: [
-            Icon(Icons.school_rounded, color: Colors.blue[800], size: 28),
-            const SizedBox(width: 8),
-            Text(
-              'Fotocopy Sekitar Kampus',
-              style: TextStyle(
-                color: Colors.blue[900],
-                fontWeight: FontWeight.bold,
-                fontSize: 22,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.tune_rounded, color: Colors.grey[700]),
-            onPressed: _showFilterBottomSheet,
-          ),
-        ],
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage.isNotEmpty
-              ? _buildErrorState()
-              : SingleChildScrollView(
-                  child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 600),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Search Bar
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                            child: TextField(
-                              controller: _searchController,
-                              onChanged: (value) => _filterPlaces(),
-                              decoration: InputDecoration(
-                                hintText: 'Cari jasa cetak atau fotocopy...',
-                                hintStyle: const TextStyle(color: Colors.grey),
-                                prefixIcon: const Icon(Icons.search_rounded, color: Colors.grey),
-                                suffixIcon: _searchController.text.isNotEmpty
-                                    ? IconButton(
-                                        icon: const Icon(Icons.clear_rounded, color: Colors.grey),
-                                        onPressed: () {
-                                          _searchController.clear();
-                                          _filterPlaces();
-                                        },
-                                      )
-                                    : null,
-                                filled: true,
-                                fillColor: const Color(0xFFF8FAFC),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: BorderSide(color: Colors.grey.shade200),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: BorderSide(color: Colors.grey.shade200),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                  borderSide: BorderSide(color: Colors.blue.shade300),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                            ),
-                          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double screenWidth = constraints.maxWidth;
+        final bool isDesktop = screenWidth > 750;
 
-                          // Banner Peta Interaktif
-                          _buildInteractiveMapBanner(),
-
-                          // Kategori Layanan (Hasil Perbaikan Tampilan Premium)
-                          _buildCategorySection(),
-
-                          // Penyedia Terdekat Header
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(16, 24, 16, 12),
-                            child: Text(
-                              'Penyedia Terdekat',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                            ),
-                          ),
-
-                          // Daftar Penyedia (Vertical List)
-                          filteredPlaces.isEmpty
-                              ? _buildEmptyState()
-                              : ListView.builder(
-                                  shrinkWrap: true,
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                                  itemCount: filteredPlaces.length,
-                                  itemBuilder: (context, index) {
-                                    final place = filteredPlaces[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.only(bottom: 16),
-                                      child: _PlaceCard(
-                                        place: place,
-                                        distance: _getDistance(place),
-                                        statusText: _getOperationalStatusText(place),
-                                        onTap: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (_) => DetailScreen(
-                                              place: place,
-                                              userLocation: userLocation,
-                                            ),
-                                          ),
-                                        ),
-                                        onNavigateTap: () => _openRoute(place),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ],
-                      ),
+        return Scaffold(
+          backgroundColor: Colors.white,
+          appBar: AppBar(
+            backgroundColor: Colors.white,
+            elevation: 0,
+            scrolledUnderElevation: 0,
+            title: Padding(
+              padding: EdgeInsets.symmetric(horizontal: isDesktop ? 24.0 : 0.0),
+              child: Row(
+                children: [
+                  Icon(Icons.school_rounded, color: Colors.blue[800], size: 28),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Fotocopy Sekitar Kampus',
+                    style: TextStyle(
+                      color: Colors.blue[900],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
                     ),
                   ),
-                ),
+                ],
+              ),
+            ),
+            actions: const [], 
+          ),
+          body: isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : errorMessage.isNotEmpty
+                  ? _buildErrorState()
+                  : SingleChildScrollView(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: isDesktop ? screenWidth * 0.08 : 0.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Search Bar
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                              child: TextField(
+                                controller: _searchController,
+                                onChanged: (value) => _filterPlaces(),
+                                decoration: InputDecoration(
+                                  hintText: 'Cari jasa cetak atau fotocopy...',
+                                  hintStyle: const TextStyle(color: Colors.grey),
+                                  prefixIcon: const Icon(Icons.search_rounded, color: Colors.grey),
+                                  suffixIcon: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (_searchController.text.isNotEmpty)
+                                        IconButton(
+                                          icon: const Icon(Icons.clear_rounded, color: Colors.grey),
+                                          onPressed: () {
+                                            _searchController.clear();
+                                            _filterPlaces();
+                                          },
+                                        ),
+                                      IconButton(
+                                        icon: Icon(Icons.tune_rounded, color: Colors.grey[700]),
+                                        onPressed: _showFilterBottomSheet,
+                                      ),
+                                      const SizedBox(width: 4),
+                                    ],
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xFFF8FAFC),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: BorderSide(color: Colors.grey.shade200),
+                                  ),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: BorderSide(color: Colors.grey.shade200),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                    borderSide: BorderSide(color: Colors.blue.shade300),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
+
+                            _buildInteractiveMapBanner(),
+                            _buildResponsiveCategorySection(),
+
+                            // Penyedia Terdekat Header
+                            const Padding(
+                              padding: EdgeInsets.fromLTRB(16, 24, 16, 12),
+                              child: Text(
+                                'Penyedia Terdekat',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                              ),
+                            ),
+
+                            // RESPONSIVE DAFTAR TOKO
+                            filteredPlaces.isEmpty
+                                ? _buildEmptyState()
+                                : Padding(
+                                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 40),
+                                    child: isDesktop
+                                        ? GridView.builder(
+                                            shrinkWrap: true,
+                                            physics: const NeverScrollableScrollPhysics(),
+                                            itemCount: filteredPlaces.length,
+                                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                              crossAxisCount: screenWidth > 1100 ? 3 : 2,
+                                              crossAxisSpacing: 20,
+                                              mainAxisSpacing: 20,
+                                              mainAxisExtent: 395,
+                                            ),
+                                            itemBuilder: (context, index) {
+                                              final place = filteredPlaces[index];
+                                              return _buildResponsiveCardItem(place);
+                                            },
+                                          )
+                                        : ListView.builder(
+                                            shrinkWrap: true,
+                                            physics: const NeverScrollableScrollPhysics(),
+                                            itemCount: filteredPlaces.length,
+                                            itemBuilder: (context, index) {
+                                              final place = filteredPlaces[index];
+                                              return Padding(
+                                                padding: const EdgeInsets.only(bottom: 16),
+                                                child: _buildResponsiveCardItem(place),
+                                              );
+                                            },
+                                          ),
+                                  ),
+                          ],
+                        ),
+                      ),
+                    ),
+        );
+      },
+    );
+  }
+
+  Widget _buildResponsiveCardItem(Place place) {
+    return _PlaceCard(
+      place: place,
+      distance: _getDistance(place),
+      statusText: _getOperationalStatusText(place),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DetailScreen(
+            place: place,
+            userLocation: userLocation,
+          ),
+        ),
+      ),
+      onNavigateTap: () => _openRoute(place),
     );
   }
 
@@ -519,108 +549,112 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Merombak Total Bagian Kategori dari Grid/Wrap Menjadi Horizontal Premium List View
-  Widget _buildCategorySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 24, 16, 14),
-          child: Text(
-            'Kategori Layanan',
-            style: TextStyle(
-              fontSize: 18, 
-              fontWeight: FontWeight.bold, 
-              color: Color(0xFF1E293B),
-              letterSpacing: 0.3,
+  // PERBAIKAN RESPONSIVE: Menggunakan Flexbox & Wrap agar melebar penuh di desktop dan melengkung/turun di mobile
+  Widget _buildResponsiveCategorySection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              'Kategori Layanan',
+              style: TextStyle(
+                fontSize: 18, 
+                fontWeight: FontWeight.bold, 
+                color: Color(0xFF1E293B),
+                letterSpacing: 0.3,
+              ),
             ),
           ),
-        ),
-        SizedBox(
-          height: 110, // Memberikan ruang agar efek bayangan (soft shadow) tidak terpotong saat dirender
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            itemCount: uiCategories.length,
-            itemBuilder: (context, index) {
-              final cat = uiCategories[index];
-              final bool isSelected = selectedCategory == cat['value'] ||
-                  (selectedCategory == 'Jilid' && cat['value'] == 'Jilid') ||
-                  (selectedCategory == 'ATK' && cat['value'] == 'ATK');
+          // Menggunakan LayoutBuilder internal untuk membedakan gaya sebaran item
+          LayoutBuilder(
+            builder: (context, catConstraints) {
+              final bool useWideStretch = catConstraints.maxWidth > 600;
 
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    if (isSelected) {
-                      selectedCategory = 'Semua';
-                    } else {
-                      selectedCategory = cat['value'];
-                    }
-                  });
-                  _filterPlaces();
-                },
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 82,
-                  margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Column(
-                    children: [
-                      // Wadah/Box Lingkaran Ikon yang Interaktif
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 58,
-                        height: 58,
-                        decoration: BoxDecoration(
-                          gradient: isSelected
-                              ? const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [Color(0xFF2196F3), Color(0xFF1565C0)],
-                                )
-                              : null,
-                          color: isSelected ? null : Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
-                            width: 1.2,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: isSelected 
-                                  ? const Color(0xFF1565C0).withOpacity(0.25)
-                                  : Colors.black.withOpacity(0.03),
-                              blurRadius: isSelected ? 10 : 6,
-                              offset: const Offset(0, 4),
+              return Wrap(
+                // Jika layar lebar, rentangkan item kategori agar memenuhi batas ujung kanan-kiri banner atas
+                alignment: useWideStretch ? WrapAlignment.spaceBetween : WrapAlignment.start,
+                runSpacing: 16, // Jarak vertikal otomatis jika item terpaksa turun ke bawah (mode mobile)
+                spacing: useWideStretch ? 0 : 12, // Jarak horizontal antar item jika dalam mode mobile guling biasa
+                children: uiCategories.map((cat) {
+                  final bool isSelected = selectedCategory == cat['value'] ||
+                      (selectedCategory == 'Jilid' && cat['value'] == 'Jilid') ||
+                      (selectedCategory == 'ATK' && cat['value'] == 'ATK');
+
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        if (isSelected) {
+                          selectedCategory = 'Semua';
+                        } else {
+                          selectedCategory = cat['value'];
+                        }
+                      });
+                      _filterPlaces();
+                    },
+                    child: SizedBox(
+                      width: 82,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 58,
+                            height: 58,
+                            decoration: BoxDecoration(
+                              gradient: isSelected
+                                  ? const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [Color(0xFF2196F3), Color(0xFF1565C0)],
+                                    )
+                                  : null,
+                              color: isSelected ? null : Colors.white,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(
+                                color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
+                                width: 1.2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: isSelected 
+                                      ? const Color(0xFF1565C0).withOpacity(0.25)
+                                      : Colors.black.withOpacity(0.03),
+                                  blurRadius: isSelected ? 10 : 6,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ],
+                            child: Icon(
+                              cat['icon'] as IconData,
+                              color: isSelected ? Colors.white : const Color(0xFF475569),
+                              size: 26,
                         ),
-                        child: Icon(
-                          cat['icon'] as IconData,
-                          color: isSelected ? Colors.white : const Color(0xFF475569),
-                          size: 26,
-                        ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            cat['label'] as String,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              color: isSelected ? const Color(0xFF1565C0) : const Color(0xFF64748B),
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 8),
-                      // Teks Label Kategori
-                      Text(
-                        cat['label'] as String,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                          color: isSelected ? const Color(0xFF1565C0) : const Color(0xFF64748B),
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                }).toList(),
               );
             },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

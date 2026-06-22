@@ -35,32 +35,40 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward();
 
-    // Panggil fungsi pre-load alih-alih Timer biasa
+    // Memulai proses pramuat data dan navigasi transisi mulus
     _preloadDataAndNavigate();
   }
 
   Future<void> _preloadDataAndNavigate() async {
-    // Menjalankan animasi tunggu 3 detik BERSAMAAN dengan proses ambil data dari API
+    // Jalankan pengambilan API bersamaan dengan durasi minimal tampilan splash (3 detik)
     await Future.wait([
+      ApiService.getPlaces().catchError((_) => []),
       Future.delayed(const Duration(seconds: 3)),
-      _fetchInitialData(),
     ]);
 
     if (mounted) {
+      // PERBAIKAN UTAMA: Mengganti MaterialPageRoute bawaan dengan PageRouteBuilder kustom
+      // untuk menciptakan efek transisi memudar (Fade Transition) yang sangat halus saat masuk ke halaman utama (MainScreen)
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-      );
-    }
-  }
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const MainScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            // Durasi dan kurva kehalusan transisi dikendalikan oleh animasi transisi internal
+            var curve = Curves.easeInOut;
+            var curvedAnimation = CurvedAnimation(
+              parent: animation,
+              curve: curve,
+            );
 
-  Future<void> _fetchInitialData() async {
-    try {
-      await ApiService.getPlaces();
-    } catch (e) {
-      // Jika error (misal no internet), abaikan saja. 
-      // Nanti di HomeScreen akan ditangani (menampilkan error/coba lagi)
-      debugPrint('Preload gagal: $e');
+            return FadeTransition(
+              opacity: curvedAnimation,
+              child: child,
+            );
+          },
+          transitionDuration: const Duration(milliseconds: 800), // Durasi transisi memudar (800ms) agar terasa premium
+        ),
+      );
     }
   }
 
@@ -74,7 +82,19 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blue[800],
-      body: Center(
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.blue.shade900,
+              Colors.blue.shade700,
+            ],
+          ),
+        ),
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: ScaleTransition(
@@ -82,14 +102,13 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Icon
+                // Logo / Icon pembungkus dengan bayangan halus
                 Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
+                  padding: const EdgeInsets.all(20),
+                  decoration: const BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: const [
+                    shape: BoxShape.circle,
+                    boxShadow: [
                       BoxShadow(
                         color: Colors.black26,
                         blurRadius: 20,
@@ -98,13 +117,13 @@ class _SplashScreenState extends State<SplashScreen>
                     ],
                   ),
                   child: Icon(
-                    Icons.print,
+                    Icons.print_rounded, // Menggunakan versi rounded agar serasi dengan sudut tumpul
                     size: 60,
                     color: Colors.blue[800],
                   ),
                 ),
                 const SizedBox(height: 24),
-                // Nama app
+                // Nama aplikasi
                 const Text(
                   'Fotocopy Sekitar Kampus',
                   style: TextStyle(
@@ -123,12 +142,12 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                 ),
                 const SizedBox(height: 48),
-                // Loading indicator
+                // Indikator Loading bawah
                 SizedBox(
                   width: 40,
                   height: 40,
                   child: CircularProgressIndicator(
-                    color: Colors.white,
+                    color: Colors.white.withOpacity(0.9),
                     strokeWidth: 3,
                   ),
                 ),
