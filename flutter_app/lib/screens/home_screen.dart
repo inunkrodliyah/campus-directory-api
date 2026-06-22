@@ -24,31 +24,33 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   String selectedCategory = 'Semua';
+  
+  // Memperbarui ikon kategori menjadi versi rounded yang lebih tebal dan solid
   final List<Map<String, dynamic>> uiCategories = [
     {
       'label': 'Fotocopy',
       'value': 'Fotocopy & Printing',
-      'icon': Icons.copy_all_outlined
+      'icon': Icons.copy_all_rounded
     },
     {
       'label': 'Print',
       'value': 'Percetakan & Digital Printing',
-      'icon': Icons.print_outlined
+      'icon': Icons.print_rounded
     },
     {
       'label': 'Warnet',
       'value': 'Warnet & Rental Komputer',
-      'icon': Icons.computer_outlined
+      'icon': Icons.computer_rounded
     },
     {
       'label': 'Jilid',
       'value': 'Jilid',
-      'icon': Icons.menu_book_outlined
+      'icon': Icons.menu_book_rounded
     },
     {
       'label': 'ATK',
       'value': 'ATK',
-      'icon': Icons.edit_outlined
+      'icon': Icons.border_color_rounded
     },
   ];
 
@@ -315,7 +317,7 @@ class _HomeScreenState extends State<HomeScreen> {
         scrolledUnderElevation: 0,
         title: Row(
           children: [
-            Icon(Icons.school_outlined, color: Colors.blue[800], size: 28),
+            Icon(Icons.school_rounded, color: Colors.blue[800], size: 28),
             const SizedBox(width: 8),
             Text(
               'Fotocopy Sekitar Kampus',
@@ -329,7 +331,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.tune, color: Colors.grey[700]),
+            icon: Icon(Icons.tune_rounded, color: Colors.grey[700]),
             onPressed: _showFilterBottomSheet,
           ),
         ],
@@ -354,10 +356,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               decoration: InputDecoration(
                                 hintText: 'Cari jasa cetak atau fotocopy...',
                                 hintStyle: const TextStyle(color: Colors.grey),
-                                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                                prefixIcon: const Icon(Icons.search_rounded, color: Colors.grey),
                                 suffixIcon: _searchController.text.isNotEmpty
                                     ? IconButton(
-                                        icon: const Icon(Icons.clear, color: Colors.grey),
+                                        icon: const Icon(Icons.clear_rounded, color: Colors.grey),
                                         onPressed: () {
                                           _searchController.clear();
                                           _filterPlaces();
@@ -386,10 +388,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           // Banner Peta Interaktif
                           _buildInteractiveMapBanner(),
 
-                          // Kategori Layanan
+                          // Kategori Layanan (Hasil Perbaikan Tampilan Premium)
                           _buildCategorySection(),
 
-                          // Penyenda Terdekat Header
+                          // Penyedia Terdekat Header
                           const Padding(
                             padding: EdgeInsets.fromLTRB(16, 24, 16, 12),
                             child: Text(
@@ -508,7 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Color(0xFF1565C0),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.explore, color: Colors.white, size: 24),
+                child: const Icon(Icons.explore_rounded, color: Colors.white, size: 24),
               ),
             ),
           ],
@@ -517,76 +519,105 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Merombak Total Bagian Kategori dari Grid/Wrap Menjadi Horizontal Premium List View
   Widget _buildCategorySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Padding(
-          padding: EdgeInsets.fromLTRB(16, 20, 16, 12),
+          padding: EdgeInsets.fromLTRB(16, 24, 16, 14),
           child: Text(
             'Kategori Layanan',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(
+              fontSize: 18, 
+              fontWeight: FontWeight.bold, 
+              color: Color(0xFF1E293B),
+              letterSpacing: 0.3,
+            ),
           ),
         ),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 12,
-              runSpacing: 12,
-              children: uiCategories.map((cat) {
-                final bool isSelected = selectedCategory == cat['value'] ||
-                    (selectedCategory == 'Jilid' && cat['value'] == 'Jilid') ||
-                    (selectedCategory == 'ATK' && cat['value'] == 'ATK');
+        SizedBox(
+          height: 110, // Memberikan ruang agar efek bayangan (soft shadow) tidak terpotong saat dirender
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            itemCount: uiCategories.length,
+            itemBuilder: (context, index) {
+              final cat = uiCategories[index];
+              final bool isSelected = selectedCategory == cat['value'] ||
+                  (selectedCategory == 'Jilid' && cat['value'] == 'Jilid') ||
+                  (selectedCategory == 'ATK' && cat['value'] == 'ATK');
 
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      if (isSelected) {
-                        selectedCategory = 'Semua';
-                      } else {
-                        selectedCategory = cat['value'];
-                      }
-                    });
-                    _filterPlaces();
-                  },
-                  child: SizedBox(
-                    width: 76,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFF1565C0) : Colors.blue.shade50.withOpacity(0.4),
-                            borderRadius: BorderRadius.circular(16),
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (isSelected) {
+                      selectedCategory = 'Semua';
+                    } else {
+                      selectedCategory = cat['value'];
+                    }
+                  });
+                  _filterPlaces();
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 82,
+                  margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Column(
+                    children: [
+                      // Wadah/Box Lingkaran Ikon yang Interaktif
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: 58,
+                        height: 58,
+                        decoration: BoxDecoration(
+                          gradient: isSelected
+                              ? const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [Color(0xFF2196F3), Color(0xFF1565C0)],
+                                )
+                              : null,
+                          color: isSelected ? null : Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: isSelected ? Colors.transparent : const Color(0xFFE2E8F0),
+                            width: 1.2,
                           ),
-                          child: Icon(
-                            cat['icon'] as IconData,
-                            color: isSelected ? Colors.white : Colors.blue[800],
-                            size: 24,
-                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isSelected 
+                                  ? const Color(0xFF1565C0).withOpacity(0.25)
+                                  : Colors.black.withOpacity(0.03),
+                              blurRadius: isSelected ? 10 : 6,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          cat['label'] as String,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isSelected ? Colors.blue[800] : Colors.black87,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        child: Icon(
+                          cat['icon'] as IconData,
+                          color: isSelected ? Colors.white : const Color(0xFF475569),
+                          size: 26,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Teks Label Kategori
+                      Text(
+                        cat['label'] as String,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                          color: isSelected ? const Color(0xFF1565C0) : const Color(0xFF64748B),
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                );
-              }).toList(),
-            ),
+                ),
+              );
+            },
           ),
         ),
       ],
@@ -625,7 +656,7 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() => isLoading = true);
               fetchPlaces();
             },
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
             label: const Text('Coba Lagi'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blue[800],
@@ -691,7 +722,7 @@ class _PlaceCard extends StatelessWidget {
                     errorWidget: (context, url, error) => Container(
                       height: 160,
                       color: Colors.blue.shade50,
-                      child: Icon(Icons.store, color: Colors.blue.shade200, size: 40),
+                      child: Icon(Icons.store_rounded, color: Colors.blue.shade200, size: 40),
                     ),
                   ),
                   Positioned(
